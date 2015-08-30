@@ -360,7 +360,7 @@ void PredType::makePredTypes()
     STD_B64BE_ = new PredType(H5T_STD_B64BE);
     STD_B64LE_ = new PredType(H5T_STD_B64LE);
     STD_REF_OBJ_ = new PredType(H5T_STD_REF_OBJ);
-    STD_REF_DSETREG_ = new PredType(H5T_STD_REF_DSETREG);
+    STD_REF_DSETREG_ = new PredType(H5T_STD_REF_REG);
 
     IEEE_F32BE_ = new PredType(H5T_IEEE_F32BE);
     IEEE_F32LE_ = new PredType(H5T_IEEE_F32LE);

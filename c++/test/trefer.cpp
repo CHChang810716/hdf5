@@ -79,15 +79,15 @@ static void test_reference_params()
 
     H5File* file1 = NULL;
     try {
-        hobj_ref_t *wbuf,      // buffer to write to disk
-                   *rbuf,      // buffer read from disk
-                   *tbuf;      // temp. buffer read from disk
+        href_t *wbuf,      // buffer to write to disk
+               *rbuf,      // buffer read from disk
+               *tbuf;      // temp. buffer read from disk
 
         // Allocate write & read buffers
-        int temp_size = MAX(sizeof(unsigned),sizeof(hobj_ref_t));
-        wbuf=(hobj_ref_t*)HDmalloc(temp_size*SPACE1_DIM1);
-        rbuf=(hobj_ref_t*)HDmalloc(temp_size*SPACE1_DIM1);
-        tbuf=(hobj_ref_t*)HDmalloc(temp_size*SPACE1_DIM1);
+        int temp_size = MAX(sizeof(unsigned),sizeof(href_t));
+        wbuf=(href_t*)HDmalloc(temp_size*SPACE1_DIM1);
+        rbuf=(href_t*)HDmalloc(temp_size*SPACE1_DIM1);
+        tbuf=(href_t*)HDmalloc(temp_size*SPACE1_DIM1);
 
         // Create file FILE1
         file1 = new H5File (FILE1, H5F_ACC_TRUNC);
@@ -199,15 +199,15 @@ static void test_reference_obj()
 
     H5File* file1 = NULL;
     try {
-        hobj_ref_t *wbuf,      // buffer to write to disk
-                   *rbuf,      // buffer read from disk
-                   *tbuf;      // temp. buffer read from disk
+        href_t *wbuf,      // buffer to write to disk
+               *rbuf,      // buffer read from disk
+               *tbuf;      // temp. buffer read from disk
 
         // Allocate write & read buffers
-        int temp_size = MAX(sizeof(unsigned),sizeof(hobj_ref_t));
-        wbuf=(hobj_ref_t*)HDmalloc(temp_size*SPACE1_DIM1);
-        rbuf=(hobj_ref_t*)HDmalloc(temp_size*SPACE1_DIM1);
-        tbuf=(hobj_ref_t*)HDmalloc(temp_size*SPACE1_DIM1);
+        int temp_size = MAX(sizeof(unsigned),sizeof(href_t));
+        wbuf=(href_t*)HDmalloc(temp_size*SPACE1_DIM1);
+        rbuf=(href_t*)HDmalloc(temp_size*SPACE1_DIM1);
+        tbuf=(href_t*)HDmalloc(temp_size*SPACE1_DIM1);
 
         // Create file FILE1
         file1 = new H5File (FILE1, H5F_ACC_TRUNC);
@@ -393,8 +393,8 @@ static void test_reference_obj()
 
 static void test_reference_group()
 {
-    hobj_ref_t wref;        /* Reference to write */
-    hobj_ref_t rref;        /* Reference to read */
+    href_t wref;        /* Reference to write */
+    href_t rref;        /* Reference to read */
     const  H5std_string write_comment="Foo!"; // Comments for group
 
     // Output message about test being performed
@@ -529,14 +529,14 @@ static void test_reference_region_1D()
     SUBTEST("1-D Dataset Region Reference Functions");
 
     try {
-        hdset_reg_ref_t *wbuf,   // buffer to write to disk
-                   *rbuf;        // buffer read from disk
+        href_t *wbuf,   // buffer to write to disk
+               *rbuf;        // buffer read from disk
         uint8_t    *dwbuf,       // Buffer for writing numeric data to disk
                    *drbuf;       // Buffer for reading numeric data from disk
 
         // Allocate write & read buffers
-        wbuf = (hdset_reg_ref_t *)HDcalloc(sizeof(hdset_reg_ref_t), (size_t)SPACE1_DIM1);
-        rbuf = (hdset_reg_ref_t *)HDmalloc(sizeof(hdset_reg_ref_t) * SPACE1_DIM1);
+        wbuf = (href_t *)HDcalloc(sizeof(href_t), (size_t)SPACE1_DIM1);
+        rbuf = (href_t *)HDmalloc(sizeof(href_t) * SPACE1_DIM1);
         dwbuf = (uint8_t *)HDmalloc(sizeof(uint8_t) * SPACE3_DIM1);
         drbuf = (uint8_t *)HDcalloc(sizeof(uint8_t), (size_t)SPACE3_DIM1);
 

@@ -421,7 +421,7 @@ H5Aopen(hid_t loc_id, const char *attr_name, hid_t aapl_id)
         HGOTO_ERROR(H5E_ATTR, H5E_CANTSET, FAIL, "can't set access property list info")
 
     /* Read in attribute from object header */
-    if(NULL == (attr = H5A__open(&loc, attr_name)))
+    if(NULL == (attr = H5A_open(&loc, attr_name)))
         HGOTO_ERROR(H5E_ATTR, H5E_CANTOPENOBJ, FAIL, "unable to load attribute info from object header for attribute: '%s'", attr_name)
 
     /* Register the attribute and get an ID for it */

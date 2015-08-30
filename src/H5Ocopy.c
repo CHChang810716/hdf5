@@ -1347,8 +1347,8 @@ H5O_copy_expand_ref(H5F_t *file_src, void *_src_ref, H5F_t *file_dst,
 
     /* Copy object references */
     if(H5R_OBJECT == ref_type) {
-        hobj_ref_t *src_ref = (hobj_ref_t *)_src_ref;
-        hobj_ref_t *dst_ref = (hobj_ref_t *)_dst_ref;
+        haddr_t *src_ref = (haddr_t *)_src_ref;
+        haddr_t *dst_ref = (haddr_t *)_dst_ref;
 
         /* Making equivalent references in the destination file */
         for(i = 0; i < ref_count; i++) {
@@ -1372,17 +1372,21 @@ H5O_copy_expand_ref(H5F_t *file_src, void *_src_ref, H5F_t *file_dst,
 	} /* end for */
     }  /* end if */
     /* Copy region references */
-    else if(H5R_DATASET_REGION == ref_type) {
-        hdset_reg_ref_t *src_ref = (hdset_reg_ref_t *)_src_ref;
-        hdset_reg_ref_t *dst_ref = (hdset_reg_ref_t *)_dst_ref;
+    else if(H5R_REGION == ref_type || H5R_ATTR == ref_type) {
+        uint8_t *src_ref = (uint8_t *)_src_ref;
+        uint8_t *dst_ref = (uint8_t *)_dst_ref;
         uint8_t *buf = NULL;    /* Buffer to store serialized selection in */
         H5HG_t hobjid;          /* Heap object ID */
         size_t buf_size;        /* Length of object in heap */
+        size_t ref_size = (size_t) (2 * H5_SIZEOF_UINT32_T) + H5F_SIZEOF_ADDR(file_src);
 
         /* Making equivalent references in the destination file */
         for(i = 0; i < ref_count; i++) {
             /* Get the heap ID for the dataset region */
-            q = (const uint8_t *)(&src_ref[i]);
+            q = (const uint8_t *)(src_ref + (size_t) i * ref_size);
+
+            /* Skip the length of the sequence */
+            q += 4;
             H5F_addr_decode(src_oloc.file, (const uint8_t **)&q, &(hobjid.addr));
             UINT32DECODE(q, hobjid.idx);
 
@@ -1417,7 +1421,12 @@ H5O_copy_expand_ref(H5F_t *file_src, void *_src_ref, H5F_t *file_dst,
                 HDmemset(&hobjid, 0, sizeof(hobjid));
 
             /* Set the dataset region reference info for the destination file */
-            p = (uint8_t *)(&dst_ref[i]);
+            p = (uint8_t *)(dst_ref + (size_t) i * ref_size);
+
+            /* Set the size */
+            UINT32ENCODE(p, buf_size);
+
+            /* Encode the heap information */
             H5F_addr_encode(dst_oloc.file, &p, hobjid.addr);
             UINT32ENCODE(p, hobjid.idx);
 

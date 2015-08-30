@@ -24,8 +24,8 @@
 static const char* MapIdToName(hid_t refobj_id,trav_table_t *travt);
 static int copy_refs_attr(hid_t loc_in, hid_t loc_out, pack_opt_t *options,
                           trav_table_t *travt, hid_t fidout);
-static herr_t update_ref_value(hid_t obj_id, H5R_type_t ref_type, void *ref_in,
-        hid_t fid_out, void *ref_out, trav_table_t *travt);
+static herr_t update_ref_value(hid_t obj_id, href_t ref_in, hid_t fid_out,
+    href_t *ref_out, trav_table_t *travt);
 
 /*-------------------------------------------------------------------------
  * Function: do_copy_refobjs
@@ -146,8 +146,8 @@ int do_copy_refobjs(hid_t fidin,
                      */
                     if(H5Tequal(mtype_id, H5T_STD_REF_OBJ)) {
                         hid_t            refobj_id = -1;
-                        hobj_ref_t       *refbuf = NULL; /* buffer for object references */
-                        hobj_ref_t       *buf = NULL;
+                        href_t          *refbuf = NULL; /* buffer for object references */
+                        href_t          *buf = NULL;
                         const char*      refname;
                         unsigned         u;
 
@@ -156,7 +156,7 @@ int do_copy_refobjs(hid_t fidin,
                          *-------------------------------------------------------------------------
                          */
                         if(nelmts) {
-                            buf = (hobj_ref_t *)HDmalloc((unsigned)(nelmts * msize));
+                            buf = (href_t *)HDmalloc((unsigned)(nelmts * msize));
                             if(buf==NULL) {
                                 printf("cannot read into memory\n" );
                                 HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDmalloc failed");
@@ -164,14 +164,14 @@ int do_copy_refobjs(hid_t fidin,
                             if(H5Dread(dset_in, mtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, buf) < 0)
                                 HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Dread failed");
 
-                            refbuf = (hobj_ref_t*) HDcalloc((unsigned)nelmts, msize);
+                            refbuf = (href_t *)HDcalloc((unsigned)nelmts, msize);
                             if(refbuf == NULL){
                                 printf("cannot allocate memory\n" );
                                 HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDcalloc failed");
                             } /* end if */
                             for(u = 0; u < nelmts; u++) {
                                 H5E_BEGIN_TRY {
-                                    if((refobj_id = H5Rdereference2(dset_in, H5P_DEFAULT, H5R_OBJECT, &buf[u])) < 0)
+                                    if((refobj_id = H5Rget_object(dset_in, H5P_DEFAULT, buf[u])) < 0)
                                         continue;
                                 } H5E_END_TRY;
 
@@ -180,9 +180,10 @@ int do_copy_refobjs(hid_t fidin,
                                  */
                                 if((refname = MapIdToName(refobj_id, travt)) != NULL) {
                                     /* create the reference, -1 parameter for objects */
-                                    if(H5Rcreate(&refbuf[u], fidout, refname, H5R_OBJECT, (hid_t)-1) < 0)
-                                        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rcreate failed");
-                                    if(options->verbose) {
+                                    if(NULL == (refbuf[u] = H5Rcreate_object(fidout, refname)))
+                                        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rcreate_object failed");
+                                    if(options->verbose)
+                                    {
                                         printf(FORMAT_OBJ,"dset",travt->objs[i].name );
                                         printf("object <%s> object reference created to <%s>\n",
                                             travt->objs[i].name,
@@ -191,6 +192,8 @@ int do_copy_refobjs(hid_t fidin,
                                 } /*refname*/
                                 if (H5Oclose(refobj_id) < 0)
                                     H5TOOLS_INFO(H5E_tools_min_id_g, "H5Oclose refob failed");
+                                if (H5Rdestroy(buf[u]) < 0)
+                                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rdestroy failed");
                             } /* u */
                         } /*nelmts*/
 
@@ -206,8 +209,12 @@ int do_copy_refobjs(hid_t fidin,
 
                         if(buf)
                             HDfree(buf);
-                        if(refbuf)
+                        if(refbuf) {
+                            for(u = 0; u < nelmts; u++)
+                                if (H5Rdestroy(refbuf[u]) < 0)
+                                    HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rdestroy failed");
                             HDfree(refbuf);
+                        }
 
                        /*------------------------------------------------------
                         * copy attrs
@@ -220,10 +227,10 @@ int do_copy_refobjs(hid_t fidin,
                      * dataset region references
                      *-------------------------------------------------------------------------
                      */
-                    else if(H5Tequal(mtype_id, H5T_STD_REF_DSETREG)) {
+                    else if(H5Tequal(mtype_id, H5T_STD_REF_REG)) {
                         hid_t            refobj_id = -1;
-                        hdset_reg_ref_t  *refbuf = NULL; /* input buffer for region references */
-                        hdset_reg_ref_t  *buf = NULL;    /* output buffer */
+                        href_t          *refbuf = NULL; /* input buffer for region references */
+                        href_t          *buf = NULL;    /* output buffer */
                         const char*      refname;
                         unsigned         u;
 
@@ -232,7 +239,7 @@ int do_copy_refobjs(hid_t fidin,
                          *-------------------------------------------------------------------------
                          */
                         if(nelmts) {
-                            buf = (hdset_reg_ref_t *)HDmalloc((unsigned)(nelmts * msize));
+                            buf = (href_t *)HDmalloc((unsigned)(nelmts * msize));
                             if(buf == NULL) {
                                 printf("cannot read into memory\n");
                                 HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDmalloc failed");
@@ -244,7 +251,7 @@ int do_copy_refobjs(hid_t fidin,
                              * create output
                              *-------------------------------------------------------------------------
                              */
-                            refbuf = (hdset_reg_ref_t *)HDcalloc(sizeof(hdset_reg_ref_t), (size_t)nelmts); /*init to zero */
+                            refbuf = (href_t *)HDcalloc(sizeof(href_t), (size_t)nelmts); /*init to zero */
                             if(refbuf == NULL) {
                                 printf("cannot allocate memory\n");
                                 HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDcalloc failed");
@@ -252,7 +259,7 @@ int do_copy_refobjs(hid_t fidin,
 
                             for(u = 0; u < nelmts; u++) {
                                 H5E_BEGIN_TRY {
-                                    if((refobj_id = H5Rdereference2(dset_in, H5P_DEFAULT, H5R_DATASET_REGION, &buf[u])) < 0)
+                                    if((refobj_id = H5Rget_object(dset_in, H5P_DEFAULT, buf[u])) < 0)
                                         continue;
                                 } H5E_END_TRY;
 
@@ -262,15 +269,16 @@ int do_copy_refobjs(hid_t fidin,
                                 if((refname = MapIdToName(refobj_id, travt)) != NULL) {
                                     hid_t region_id = -1;    /* region id of the referenced dataset */
 
-                                    if((region_id = H5Rget_region(dset_in, H5R_DATASET_REGION, &buf[u])) < 0)
-                                        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rget_region failed");
+                                    if((region_id = H5Rget_region2(dset_in, buf[u])) < 0)
+                                        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rget_region2 failed");
 
                                     /* create the reference, we need the space_id */
-                                    if(H5Rcreate(&refbuf[u], fidout, refname, H5R_DATASET_REGION, region_id) < 0)
-                                        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rcreate failed");
+                                    if(NULL == (refbuf[u] = H5Rcreate_region(fidout, refname, region_id)))
+                                        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rcreate_region failed");
                                     if(H5Sclose(region_id) < 0)
                                         HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Sclose failed");
-                                    if(options->verbose) {
+                                    if(options->verbose)
+                                    {
                                         printf(FORMAT_OBJ,"dset",travt->objs[i].name );
                                         printf("object <%s> region reference created to <%s>\n",
                                             travt->objs[i].name,
@@ -279,6 +287,8 @@ int do_copy_refobjs(hid_t fidin,
                                 } /*refname*/
                                 if (H5Oclose(refobj_id) < 0)
                                     H5TOOLS_INFO(H5E_tools_min_id_g, "H5Oclose refobj_id failed");
+                                if (H5Rdestroy(buf[u]) < 0)
+                                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rdestroy failed");
                             } /* u */
                         } /*nelmts*/
 
@@ -294,15 +304,19 @@ int do_copy_refobjs(hid_t fidin,
 
                         if(buf)
                             HDfree(buf);
-                        if(refbuf)
+                        if(refbuf) {
+                            for(u = 0; u < nelmts; u++)
+                                if (H5Rdestroy(refbuf[u]) < 0)
+                                    HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rdestroy failed");
                             HDfree(refbuf);
+                        }
 
                        /*-----------------------------------------------------
                         * copy attrs
                         *----------------------------------------------------*/
                         if(copy_attr(dset_in, dset_out, &named_dt_head, travt, options) < 0)
                             HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "copy_attr failed");
-                    } /* H5T_STD_REF_DSETREG */
+                    } /* H5T_STD_REF_REG */
                     /*-------------------------------------------------------------------------
                      * not references, open previously created object in 1st traversal
                      *-------------------------------------------------------------------------
@@ -448,7 +462,7 @@ static int copy_refs_attr(hid_t loc_in,
                 is_ref_vlen = 0,
                 is_ref_array = 0,
                 is_ref_comp = 0;
-    void       *refbuf = NULL;
+    href_t     *refbuf = NULL;
     void       *buf = NULL;
     const char *refname = NULL;
     unsigned   *ref_comp_index = NULL;
@@ -588,32 +602,9 @@ static int copy_refs_attr(hid_t loc_in,
             HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Acreate2 failed");
 
         if (nelmts>0) {
-            /* handle object references */
-            if((is_ref || is_ref_array) && (H5R_OBJ_REF_BUF_SIZE==msize)) {
-                buf = (hobj_ref_t *)HDmalloc((unsigned)(nelmts * msize));
-                if(buf == NULL) {
-                    printf("cannot read into memory\n");
-                    HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDmalloc failed");
-                } /* end if */
-                if(H5Aread(attr_id, mtype_id, buf) < 0)
-                    HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Aread failed");
-
-                refbuf = (hobj_ref_t *)HDcalloc((unsigned)nelmts, msize);
-                if(refbuf == NULL) {
-                    printf("cannot allocate memory\n");
-                    HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDcalloc failed");
-                } /* end if */
-
-                for(i = 0; i < (unsigned)nelmts; i++) {
-                    if (update_ref_value(attr_id, H5R_OBJECT, &((hobj_ref_t *)buf)[i], fidout, &((hobj_ref_t *)refbuf)[i], travt)<0)
-                        continue;
-                    if(options->verbose)
-                        printf("object <%s> reference created to <%s>\n", name, refname);
-                } /* i */
-            } /* H5T_STD_REF_OBJ */
-            /* handle region references */
-            else if((is_ref || is_ref_array) && (H5R_DSET_REG_REF_BUF_SIZE == msize)) {
-                buf = (hdset_reg_ref_t *)HDmalloc((unsigned)(nelmts * msize));
+            /* handle references */
+            if(is_ref || is_ref_array) {
+                buf = (href_t *)HDmalloc((unsigned)(nelmts * msize));
 
                 if(buf == NULL) {
                     printf( "cannot read into memory\n" );
@@ -622,25 +613,22 @@ static int copy_refs_attr(hid_t loc_in,
                 if(H5Aread(attr_id, mtype_id, buf) < 0)
                     HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Aread failed");
 
-                /*-------------------------------------------------------------------------
-                 * create output
-                 *-------------------------------------------------------------------------
-                 */
-                refbuf = (hdset_reg_ref_t *)HDcalloc(sizeof(hdset_reg_ref_t), (size_t)nelmts); /*init to zero */
+                refbuf = (href_t *)HDcalloc(sizeof(href_t), (size_t)nelmts); /*init to zero */
                 if(refbuf == NULL) {
                     printf( "cannot allocate memory\n" );
                     HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "HDcalloc failed");
                 } /* end if */
 
                 for(i = 0; i < (unsigned)nelmts; i++) {
-                    if (update_ref_value(attr_id, H5R_DATASET_REGION, &((hdset_reg_ref_t *)buf)[i], fidout, &((hdset_reg_ref_t *)refbuf)[i], travt)<0)
+                    if (update_ref_value(attr_id, ((href_t *)buf)[i], fidout, &refbuf[i], travt)<0)
                         continue;
                     if(options->verbose)
                         printf("object <%s> region reference created to <%s>\n", name, refname);
                 }
-            } /* H5T_STD_REF_DSETREG */
+            } /* else if (is_ref || is_ref_array) */
             else if (is_ref_vlen) {
                 /* handle VLEN of references */
+                href_t ref_out;
 
                 buf = (hvl_t *)HDmalloc((unsigned)(nelmts * sizeof(hvl_t)));
                 refbuf = buf; /* reuse the read buffer for write */
@@ -653,32 +641,15 @@ static int copy_refs_attr(hid_t loc_in,
                 if(H5Aread(attr_id, mtype_id, buf) < 0)
                     HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Aread failed");
 
-                if (H5R_OBJ_REF_BUF_SIZE==msize) {
-                    hobj_ref_t ref_out;
+                for (i=0; i<(unsigned)nelmts; i++) {
+                    href_t *ptr = (href_t *)((hvl_t *)buf)[i].p;
 
-                    for (i=0; i<(unsigned)nelmts; i++) {
-                        hobj_ref_t *ptr = (hobj_ref_t *)((hvl_t *)buf)[i].p;
-
-                        for (j=0; j<((hvl_t *)buf)[i].len; j++ ) {
-                            if (update_ref_value(attr_id, H5R_OBJECT, &(ptr[j]), fidout, &ref_out, travt)<0)
-                                continue;
-                            HDmemcpy(&(ptr[j]), &ref_out, msize);
-                        }
-                    }  /* for (i=0; i<nelems; i++) */
-                }
-                else if (H5R_DSET_REG_REF_BUF_SIZE == msize) {
-                    hdset_reg_ref_t ref_out;
-
-                    for (i=0; i<(unsigned)nelmts; i++) {
-                        hdset_reg_ref_t *ptr = (hdset_reg_ref_t *)((hvl_t *)buf)[i].p;
-
-                        for (j=0; j<((hvl_t *)buf)[i].len; j++ ) {
-                            if (update_ref_value(attr_id, H5R_DATASET_REGION, &(ptr[j]), fidout, &ref_out, travt)<0)
-                                continue;
-                            HDmemcpy(&(ptr[j]), &ref_out, msize);
-                        }
-                    }  /* for (i=0; i<nelems; i++) */
-                }
+                    for (j=0; j<((hvl_t *)buf)[i].len; j++ ) {
+                        if (update_ref_value(attr_id, ptr[j], fidout, &ref_out, travt)<0)
+                            continue;
+                        HDmemcpy(&(ptr[j]), &ref_out, msize);
+                    }
+                }  /* for (i=0; i<nelems; i++) */
             } /* else if (is_ref_vlen) */
             else if (is_ref_comp) {
                 /* handle ref fields in a compound */
@@ -696,22 +667,12 @@ static int copy_refs_attr(hid_t loc_in,
 
                 for (i=0; i<(unsigned)nelmts; i++) {
                     for (j=0; j<(unsigned)ref_comp_field_n; j++) {
-                        if (ref_comp_size[j] == H5R_OBJ_REF_BUF_SIZE) {
-                            size_t idx = (i * msize) + H5Tget_member_offset(mtype_id, ref_comp_index[j]);
-                            hobj_ref_t ref_out;
+                        size_t idx = (i * msize) + H5Tget_member_offset(mtype_id, ref_comp_index[j]);
+                        href_t ref_out;
 
-                            if (update_ref_value(attr_id, H5R_OBJECT, (hobj_ref_t *)(((char *)buf)+idx), fidout, &ref_out, travt)<0)
-                                continue;
-                            HDmemcpy(((char *)buf)+idx, &ref_out, ref_comp_size[j]);
-                        } /* if */
-                        else if (ref_comp_size[j] == H5R_DSET_REG_REF_BUF_SIZE) {
-                            size_t idx = i * msize + H5Tget_member_offset(mtype_id, ref_comp_index[j]);
-                            hdset_reg_ref_t ref_out;
-
-                            if (update_ref_value(attr_id, H5R_DATASET_REGION, (hdset_reg_ref_t *)(((char *)buf)+idx), fidout, &ref_out, travt)<0)
-                                continue;
-                            HDmemcpy(((char *)buf)+idx, &ref_out, ref_comp_size[j]);
-                        } /* else if */
+                        if (update_ref_value(attr_id, *((href_t *)(((char *)buf)+idx)), fidout, &ref_out, travt)<0)
+                            continue;
+                        HDmemcpy(((char *)buf)+idx, &ref_out, ref_comp_size[j]);
                     } /* j */
                 } /* i */
             } /* else if (is_ref_comp) */
@@ -827,30 +788,40 @@ out:
  * Purpose:     Update a reference value
  *-------------------------------------------------------------------------
  */
-static herr_t update_ref_value(hid_t obj_id, H5R_type_t ref_type, void *ref_in,
-        hid_t fid_out, void *ref_out, trav_table_t *travt)
+static herr_t update_ref_value(hid_t obj_id, href_t ref_in, hid_t fid_out,
+    href_t *ref_out, trav_table_t *travt)
 {
     int         ret_value = 0;   /*no need to LEAVE() on ERROR: HERR_INIT(int, SUCCEED) */
     const char *ref_obj_name;
-    hid_t       space_id = -1;
-    hid_t       ref_obj_id = -1;
+    hid_t space_id = -1, ref_obj_id = -1;
+    H5R_type_t ref_type;
+    href_t new_ref = HREF_NULL;
 
-    ref_obj_id = H5Rdereference2(obj_id, H5P_DEFAULT, ref_type, ref_in);
+    ref_type = H5Rget_type(ref_in);
+    if (ref_type == H5R_BADTYPE)
+        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "Bad reference type");
+
+    ref_obj_id = H5Rget_object(obj_id, H5P_DEFAULT, ref_in);
     if (ref_obj_id < 0)
-        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rdereference2 failed");
+        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rget_object failed");
 
     ref_obj_name = MapIdToName(ref_obj_id, travt);
     if (ref_obj_name == NULL)
         HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "MapIdToName failed");
 
-    if (ref_type == H5R_DATASET_REGION) {
-        space_id = H5Rget_region(obj_id, H5R_DATASET_REGION, ref_in);
+    if (ref_type == H5R_REGION) {
+        space_id = H5Rget_region2(obj_id, ref_in);
         if (space_id < 0)
-            HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rget_region failed");
+            HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rget_region2 failed");
+        new_ref = H5Rcreate_region(fid_out, ref_obj_name, space_id);
+    } else if (ref_type == H5R_OBJECT) {
+        new_ref = H5Rcreate_object(fid_out, ref_obj_name);
     }
 
-    if(H5Rcreate(ref_out, fid_out, ref_obj_name, ref_type, space_id) < 0)
-        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "H5Rcreate failed");
+    if (HREF_NULL == new_ref)
+        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "NULL region");
+
+    *ref_out = new_ref;
 
 done:
     H5E_BEGIN_TRY {

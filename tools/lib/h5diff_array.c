@@ -726,32 +726,39 @@ static hsize_t diff_datum(
             nfound++;
             HGOTO_DONE (opts->err_stat);
         }
-        else if (!iszero1 && !iszero2) {
-            /*-------------------------------------------------------------------------
-             * H5T_STD_REF_DSETREG
-             * Dataset region reference
-             *-------------------------------------------------------------------------
-             */
+        else if (!iszero1 && !iszero2)
+        {
             hid_t obj1_id = -1;
             hid_t obj2_id = -1;
+            href_t ref1 = (href_t)_mem1;
+            href_t ref2 = (href_t)_mem2;
+            H5R_type_t ref_type = H5Rget_type(ref1);
+            if (H5Rget_type(ref2) != ref_type)
+                return 1;
 
-            if (type_size == H5R_DSET_REG_REF_BUF_SIZE) {
+           /*------------------------------------------------------------------
+            * H5T_STD_REF_REG
+            * Dataset region reference
+            *------------------------------------------------------------------
+            */
+            if (ref_type==H5R_REGION)
+            {
                 hid_t region1_id = -1;
                 hid_t region2_id = -1;
 
-                if ((obj1_id = H5Rdereference2(container1_id, H5P_DEFAULT, H5R_DATASET_REGION, _mem1)) < 0) {
+                if ((obj1_id = H5Rget_object(container1_id, H5P_DEFAULT, ref1))<0) {
                     opts->err_stat = 1;
-                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rdereference2 object 1 failed");
+                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_object object 1 failed");
                 }
-                if ((obj2_id = H5Rdereference2(container2_id, H5P_DEFAULT, H5R_DATASET_REGION, _mem2)) < 0) {
+                if ((obj2_id = H5Rget_object(container2_id, H5P_DEFAULT, ref2))<0) {
                     opts->err_stat = 1;
-                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rdereference2 object 2 failed");
+                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_object object 2 failed");
                 }
-                if ((region1_id = H5Rget_region(container1_id, H5R_DATASET_REGION, _mem1)) < 0) {
+                if ((region1_id = H5Rget_region2(container1_id, ref1))<0) {
                     opts->err_stat = 1;
                     H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_region object 1 failed");
                 }
-                if ((region2_id = H5Rget_region(container2_id, H5R_DATASET_REGION, _mem2)) < 0) {
+                if ((region2_id = H5Rget_region2(container2_id, ref2))<0) {
                     opts->err_stat = 1;
                     H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_region object 2 failed");
                 }
@@ -764,22 +771,23 @@ static hsize_t diff_datum(
                 H5Sclose(region2_id);
             }/*dataset reference*/
 
-            /*-------------------------------------------------------------------------
-             * H5T_STD_REF_OBJ
-             * Object references. get the type and OID of the referenced object
-             *-------------------------------------------------------------------------
-             */
-            else if (type_size == H5R_OBJ_REF_BUF_SIZE) {
+           /*------------------------------------------------------------------
+            * H5T_STD_REF_OBJ
+            * Object references. get the type and OID of the referenced object
+            *------------------------------------------------------------------
+            */
+            else if (ref_type==H5R_OBJECT)
+            {
                 H5O_type_t obj1_type;
                 H5O_type_t obj2_type;
 
-                if (H5Rget_obj_type2(container1_id, H5R_OBJECT, _mem1, &obj1_type) < 0) {
+                if (H5Rget_obj_type3(container1_id, ref1, &obj1_type) < 0) {
                     opts->err_stat = 1;
-                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_obj_type2 object 1 failed");
+                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_obj_type3 object 1 failed");
                 }
-                if (H5Rget_obj_type2(container2_id, H5R_OBJECT, _mem2, &obj2_type) < 0) {
+                if (H5Rget_obj_type3(container2_id, ref2, &obj2_type) < 0) {
                     opts->err_stat = 1;
-                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_obj_type2 object 2 failed");
+                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_obj_type3 object 2 failed");
                 }
 
                 /* check object type */
@@ -790,13 +798,13 @@ static hsize_t diff_datum(
                         HGOTO_DONE (opts->err_stat);
                     }
 
-                if ((obj1_id = H5Rdereference2(container1_id, H5P_DEFAULT, H5R_OBJECT, _mem1)) < 0) {
+                if ((obj1_id = H5Rget_object(container1_id, H5P_DEFAULT, ref1)) < 0) {
                     opts->err_stat = 1;
-                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rdereference2 object 1 failed");
+                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_object object 1 failed");
                 }
-                if ((obj2_id = H5Rdereference2(container2_id, H5P_DEFAULT, H5R_OBJECT, _mem2)) < 0) {
+                if ((obj2_id = H5Rget_object(container2_id, H5P_DEFAULT, ref2)) < 0) {
                     opts->err_stat = 1;
-                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rdereference2 object 2 failed");
+                    H5TOOLS_INFO(H5E_tools_min_id_g, "H5Rget_object object 2 failed");
                 }
 
                 /* compare */

@@ -704,7 +704,7 @@ H5O_type_t H5Location::p_get_ref_obj_type(void *ref, H5R_type_t ref_type) const
 //--------------------------------------------------------------------------
 DataSpace H5Location::getRegion(void *ref, H5R_type_t ref_type) const
 {
-    hid_t space_id = H5Rget_region(getId(), ref_type, ref);
+    hid_t space_id = H5Rget_region1(getId(), ref_type, ref);
     if (space_id < 0)
     {
         throw ReferenceException(inMemFunc("getRegion"), "H5Rget_region failed");

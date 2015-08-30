@@ -431,7 +431,7 @@ H5O_dtype_decode_helper(H5F_t *f, unsigned *ioflags/*in,out*/, const uint8_t **p
 
         case H5T_REFERENCE: /* Reference datatypes...  */
             dt->shared->u.atomic.order = H5T_ORDER_NONE;
-            dt->shared->u.atomic.prec = 8 * dt->shared->size;
+            dt->shared->u.atomic.prec = 0;
             dt->shared->u.atomic.offset = 0;
             dt->shared->u.atomic.lsb_pad = H5T_PAD_ZERO;
             dt->shared->u.atomic.msb_pad = H5T_PAD_ZERO;
@@ -439,15 +439,12 @@ H5O_dtype_decode_helper(H5F_t *f, unsigned *ioflags/*in,out*/, const uint8_t **p
             /* Set reference type */
             dt->shared->u.atomic.u.r.rtype = (H5R_type_t)(flags & 0x0f);
 
-            /* Set extra information for object references, so the hobj_ref_t gets swizzled correctly */
-            if(dt->shared->u.atomic.u.r.rtype == H5R_OBJECT) {
-                /* Mark location this type as undefined for now.  The caller function should
-                 * decide the location. */
-                dt->shared->u.atomic.u.r.loc = H5T_LOC_BADLOC;
+            /* Mark location this type as undefined for now.  The caller function should
+             * decide the location. */
+            dt->shared->u.atomic.u.r.loc = H5T_LOC_BADLOC;
 
-                /* This type needs conversion */
-                dt->shared->force_conv = TRUE;
-            } /* end if */
+            /* This type needs conversion */
+            dt->shared->force_conv = TRUE;
             break;
 
         case H5T_ENUM:

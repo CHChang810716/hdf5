@@ -2823,7 +2823,7 @@ xml_print_refs(hid_t did, int source)
     hssize_t          ssiz    = -1;
     hsize_t           i;
     size_t            tsiz;
-    hobj_ref_t       *refbuf = NULL;
+    href_t           *refbuf = NULL;
     char             *buf = NULL;
     h5tools_str_t     buffer;          /* string into which to render   */
     h5tools_context_t ctx;             /* print context  */
@@ -2881,7 +2881,7 @@ xml_print_refs(hid_t did, int source)
             goto error;
     }
 
-    refbuf = (hobj_ref_t *) buf;
+    refbuf = (href_t *) buf;
 
     /* setup */
     HDmemset(&buffer, 0, sizeof(h5tools_str_t));
@@ -2907,8 +2907,9 @@ xml_print_refs(hid_t did, int source)
     string_dataformat.do_escape = display_escape;
     outputformat = &string_dataformat;
 
+    /* TODO this needs to be correctly fixed */
     for (i = 0; i < (hsize_t)ssiz; i++) {
-        const char *path = lookup_ref_path(*refbuf);
+        const char *path = lookup_ref_path(*(haddr_t *)refbuf);
         ctx.indent_level++;
 
         if (!path) {
@@ -3321,7 +3322,7 @@ xml_dump_fill_value(hid_t dcpl, hid_t type)
     H5Pget_fill_value(dcpl, type, buf);
 
     if (H5Tget_class(type) == H5T_REFERENCE) {
-        const char * path = lookup_ref_path(*(hobj_ref_t *) buf);
+        const char * path = lookup_ref_path(*(haddr_t *) buf);
 
         ctx.need_prefix = TRUE;
 

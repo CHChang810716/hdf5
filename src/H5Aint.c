@@ -462,7 +462,7 @@ done:
  *-------------------------------------------------------------------------
  */
 H5A_t *
-H5A__open(const H5G_loc_t *loc, const char *attr_name)
+H5A_open(const H5G_loc_t *loc, const char *attr_name)
 {
     H5A_t       *attr = NULL;           /* Attribute from object header */
     H5A_t       *ret_value = NULL;      /* Return value */

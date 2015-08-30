@@ -542,8 +542,8 @@ herr_t H5IMlink_palette( hid_t loc_id,
     hid_t       atid=-1;
     hid_t       aid=-1;
     hid_t       asid=-1;
-    hobj_ref_t  ref;         /* write a new reference */
-    hobj_ref_t  *refbuf;     /* buffer to read references */
+    href_t  ref;         /* write a new reference */
+    href_t  *refbuf;     /* buffer to read references */
     hssize_t    n_refs;
     hsize_t     dim_ref;
     int         ok_pal;
@@ -586,7 +586,7 @@ herr_t H5IMlink_palette( hid_t loc_id,
             goto out;
 
         /* Create a reference. The reference is created on the local id.  */
-        if(H5Rcreate(&ref, loc_id, pal_name, H5R_OBJECT, (hid_t)-1) < 0)
+        if(NULL == (ref = H5Rcreate_object(loc_id, pal_name)))
             goto out;
 
         /* Write the attribute with the reference */
@@ -626,7 +626,7 @@ herr_t H5IMlink_palette( hid_t loc_id,
 
         dim_ref = (hsize_t)n_refs + 1;
 
-        refbuf = (hobj_ref_t*)HDmalloc( sizeof(hobj_ref_t) * (size_t)dim_ref );
+        refbuf = (href_t*)HDmalloc( sizeof(href_t) * (size_t)dim_ref );
 
         if ( H5Aread( aid, atid, refbuf ) < 0)
             goto out;
@@ -636,7 +636,7 @@ herr_t H5IMlink_palette( hid_t loc_id,
             goto out;
 
         /* Create a new reference for this palette. */
-        if ( H5Rcreate( &ref, loc_id, pal_name, H5R_OBJECT, (hid_t)-1 ) < 0)
+        if (NULL == (ref = H5Rcreate_object(loc_id, pal_name)))
             goto out;
 
         refbuf[n_refs] = ref;
@@ -910,7 +910,7 @@ herr_t H5IMget_palette_info( hid_t loc_id,
     hid_t      asid=-1;
     hssize_t   n_refs;
     hsize_t    dim_ref;
-    hobj_ref_t *refbuf;     /* buffer to read references */
+    href_t    *refbuf;     /* buffer to read references */
     hid_t      pal_id;
     hid_t      pal_space_id;
     hsize_t    pal_maxdims[2];
@@ -945,13 +945,13 @@ herr_t H5IMget_palette_info( hid_t loc_id,
 
         dim_ref = (hsize_t)n_refs;
 
-        refbuf = (hobj_ref_t*)HDmalloc( sizeof(hobj_ref_t) * (size_t)dim_ref );
+        refbuf = (href_t *)HDmalloc( sizeof(href_t) * (size_t)dim_ref );
 
         if ( H5Aread( aid, atid, refbuf ) < 0)
             goto out;
 
         /* Get the actual palette */
-        if ( (pal_id = H5Rdereference2(did, H5P_DEFAULT, H5R_OBJECT, &refbuf[pal_number])) < 0)
+        if ( (pal_id = H5Rget_object(did, H5P_DEFAULT, refbuf[pal_number])) < 0)
             goto out;
 
         if ( (pal_space_id = H5Dget_space( pal_id )) < 0)
@@ -1026,7 +1026,7 @@ herr_t H5IMget_palette( hid_t loc_id,
     hid_t      asid=-1;
     hssize_t   n_refs;
     hsize_t    dim_ref;
-    hobj_ref_t *refbuf;     /* buffer to read references */
+    href_t    *refbuf;     /* buffer to read references */
     hid_t      pal_id;
 
     /* check the arguments */
@@ -1062,13 +1062,13 @@ herr_t H5IMget_palette( hid_t loc_id,
 
         dim_ref = (hsize_t)n_refs;
 
-        refbuf = (hobj_ref_t*)HDmalloc( sizeof(hobj_ref_t) * (size_t)dim_ref );
+        refbuf = (href_t*)HDmalloc( sizeof(href_t) * (size_t)dim_ref );
 
         if ( H5Aread( aid, atid, refbuf ) < 0)
             goto out;
 
         /* Get the palette id */
-        if ( (pal_id = H5Rdereference2(did, H5P_DEFAULT, H5R_OBJECT, &refbuf[pal_number])) < 0)
+        if ( (pal_id = H5Rget_object(did, H5P_DEFAULT, refbuf[pal_number])) < 0)
             goto out;
 
         /* Read the palette dataset */

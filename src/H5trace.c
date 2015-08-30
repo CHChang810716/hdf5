@@ -34,6 +34,7 @@
 #include "H5Dprivate.h"     /* Datasets                                 */
 #include "H5Eprivate.h"     /* Error handling                           */
 #include "H5FDprivate.h"    /* File drivers                             */
+#include "H5Rprivate.h"     /* References                               */
 #include "H5Ipkg.h"         /* IDs                                      */
 #include "H5MMprivate.h"    /* Memory management                        */
 
@@ -1804,9 +1805,8 @@ H5_trace(const double *returning, const char *func, const char *type, ...)
                         HDfprintf(out, "NULL");
                 } /* end if */
                 else {
-                    hobj_ref_t ref = va_arg(ap, hobj_ref_t);
-
-                    HDfprintf(out, "Reference Object=%a", ref);
+                    HDfprintf(out, "OPAQUE TYPE");
+                    goto error;
                 } /* end else */
                 break;
 
@@ -1831,8 +1831,12 @@ H5_trace(const double *returning, const char *func, const char *type, ...)
                                     HDfprintf(out, "H5R_OBJECT");
                                     break;
 
-                                case H5R_DATASET_REGION:
-                                    HDfprintf(out, "H5R_DATASET_REGION");
+                                case H5R_REGION:
+                                    HDfprintf(out, "H5R_REGION");
+                                    break;
+
+                                case H5R_ATTR:
+                                    HDfprintf(out, "H5R_ATTR");
                                     break;
 
                                 case H5R_MAXTYPE:

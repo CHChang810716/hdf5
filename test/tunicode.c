@@ -381,7 +381,7 @@ void test_objnames(hid_t fid, const char* string)
   char read_buf[MAX_STRING_LENGTH];
   char path_buf[MAX_PATH_LENGTH];
   hsize_t dims=1;
-  hobj_ref_t obj_ref;
+  href_t obj_ref;
   ssize_t size;
   herr_t ret;
 
@@ -449,17 +449,21 @@ void test_objnames(hid_t fid, const char* string)
   CHECK(ret, FAIL, "H5Dcreate2");
 
   /* Create reference to named datatype */
-  ret = H5Rcreate(&obj_ref, grp2_id, string, H5R_OBJECT, (hid_t)-1);
-  CHECK(ret, FAIL, "H5Rcreate");
+  obj_ref = H5Rcreate_object(grp2_id, string);
+  CHECK(obj_ref, NULL, "H5Rcreate");
   /* Write selection and read it back*/
   ret = H5Dwrite(dset_id, H5T_STD_REF_OBJ, H5S_ALL, H5S_ALL, H5P_DEFAULT, &obj_ref);
   CHECK(ret, FAIL, "H5Dwrite");
+  ret = H5Rdestroy(obj_ref);
+  CHECK(ret, FAIL, "H5Rdestroy");
   ret = H5Dread(dset_id, H5T_STD_REF_OBJ, H5S_ALL, H5S_ALL, H5P_DEFAULT, &obj_ref);
   CHECK(ret, FAIL, "H5Dread");
 
   /* Ensure that we can open named datatype using object reference */
-  type_id = H5Rdereference2(dset_id, H5P_DEFAULT, H5R_OBJECT, &obj_ref);
-  CHECK(type_id, FAIL, "H5Rdereference2");
+  type_id = H5Rget_object(dset_id, H5P_DEFAULT, obj_ref);
+  CHECK(type_id, FAIL, "H5Rget_object");
+  ret = H5Rdestroy(obj_ref);
+  CHECK(ret, FAIL, "H5Rdestroy");
   ret = H5Tcommitted(type_id);
   VERIFY(ret, 1, "H5Tcommitted");
 

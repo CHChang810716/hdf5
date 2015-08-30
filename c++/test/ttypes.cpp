@@ -199,7 +199,7 @@ typedef struct {     /* Struct with atomic fields */
 } atomic_typ_t;
 
 typedef struct {    /* Struct with complex fields */
-        hobj_ref_t arr_r[3][3];
+        href_t arr_r[3][3];
         int i;
         hvl_t vl_f;
         hvl_t vl_s;
