@@ -216,7 +216,7 @@ H5R_create_object(H5G_loc_t *loc, const char *name)
     hbool_t obj_found = FALSE;  /* Object location found */
     struct href *ret_value = NULL; /* Return value */
 
-    FUNC_ENTER_PACKAGE_VOL
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(loc);
     HDassert(name);
@@ -241,7 +241,7 @@ done:
     if(obj_found)
         H5G_loc_free(&obj_loc);
 
-    FUNC_LEAVE_NOAPI_VOL(ret_value)
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5R_create_object() */
 
 /*-------------------------------------------------------------------------
@@ -267,7 +267,7 @@ H5R_create_region(H5G_loc_t *loc, const char *name, H5S_t *space)
     struct href *ref = NULL;         /* Reference to be returned */
     struct href *ret_value = NULL;   /* Return value */
 
-    FUNC_ENTER_PACKAGE_VOL
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(loc);
     HDassert(name);
@@ -317,7 +317,7 @@ done:
         H5MM_free(ref);
     }
 
-    FUNC_LEAVE_NOAPI_VOL(ret_value)
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5R_create_region */
 
 /*-------------------------------------------------------------------------
@@ -344,7 +344,7 @@ H5R_create_attr(H5G_loc_t *loc, const char *name, const char *attr_name)
     struct href *ref = NULL;         /* Reference to be returned */
     struct href *ret_value = NULL;   /* Return value */
 
-    FUNC_ENTER_PACKAGE_VOL
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(loc);
     HDassert(name);
@@ -399,7 +399,7 @@ done:
         H5MM_free(ref);
     }
 
-    FUNC_LEAVE_NOAPI_VOL(ret_value)
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5R_create_attr */
 
 /*-------------------------------------------------------------------------
@@ -423,7 +423,7 @@ H5R_create_ext_object(const char *filename, const char *pathname)
     struct href *ref = NULL;         /* Reference to be returned */
     struct href *ret_value = NULL;   /* Return value */
 
-    FUNC_ENTER_PACKAGE_VOL
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(filename);
     HDassert(pathname);
@@ -469,7 +469,7 @@ done:
         H5MM_free(ref);
     }
 
-    FUNC_LEAVE_NOAPI_VOL(ret_value)
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5R_create_ext_object() */
 
 /*-------------------------------------------------------------------------
@@ -495,7 +495,7 @@ H5R_create_ext_region(const char *filename, const char *pathname, H5S_t *space)
     struct href *ref = NULL;         /* Reference to be returned */
     struct href *ret_value = NULL;   /* Return value */
 
-    FUNC_ENTER_PACKAGE_VOL
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(filename);
     HDassert(pathname);
@@ -552,7 +552,7 @@ done:
         H5MM_free(ref);
     }
 
-    FUNC_LEAVE_NOAPI_VOL(ret_value)
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5R_create_ext_region */
 
 /*-------------------------------------------------------------------------
@@ -578,7 +578,7 @@ H5R_create_ext_attr(const char *filename, const char *pathname,
     struct href *ref = NULL;         /* Reference to be returned */
     struct href *ret_value = NULL;   /* Return value */
 
-    FUNC_ENTER_PACKAGE_VOL
+    FUNC_ENTER_NOAPI_NOINIT
 
     HDassert(filename);
     HDassert(pathname);
@@ -638,7 +638,7 @@ done:
         H5MM_free(ref);
     }
 
-    FUNC_LEAVE_NOAPI_VOL(ret_value)
+    FUNC_LEAVE_NOAPI(ret_value)
 } /* H5R_create_ext_attr */
 
 /*-------------------------------------------------------------------------

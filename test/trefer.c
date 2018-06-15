@@ -493,7 +493,7 @@ test_reference_region(void)
     hid_t    sid1,        /* Dataspace ID    #1        */
                 sid2;        /* Dataspace ID    #2        */
     hid_t       dapl_id;        /* Dataset access property list */
-    hsize_t    dims1[] = {SPACE1_DIM1},
+    hsize_t    dims1[] = {3},
                 dims2[] = {SPACE2_DIM1, SPACE2_DIM2};
     hsize_t    start[SPACE2_RANK];     /* Starting location of hyperslab */
     hsize_t    stride[SPACE2_RANK];    /* Stride of hyperslab */
@@ -618,7 +618,7 @@ test_reference_region(void)
     /* Store third dataset region */
     wbuf[2] = H5Rcreate_region(fid1, "/Dataset2", sid2);
     CHECK(wbuf[2], NULL, "H5Rcreate");
-    ret = H5Rget_obj_type3(dset1, wbuf[0], &obj_type);
+    ret = H5Rget_obj_type3(dset1, wbuf[2], &obj_type);
     CHECK(ret, FAIL, "H5Rget_obj_type3");
     VERIFY(obj_type, H5O_TYPE_DATASET, "H5Rget_obj_type3");
 
@@ -888,7 +888,7 @@ test_reference_region_1D(void)
     hid_t    sid1,           /* Dataspace ID    #1        */
                 sid3;           /* Dataspace ID    #3        */
     hid_t       dapl_id;        /* Dataset access property list */
-    hsize_t    dims1[] = {SPACE1_DIM1},
+    hsize_t    dims1[] = {2},
                 dims3[] = {SPACE3_DIM1};
     hsize_t    start[SPACE3_RANK];     /* Starting location of hyperslab */
     hsize_t    stride[SPACE3_RANK];    /* Stride of hyperslab */
@@ -1449,10 +1449,11 @@ test_reference_compat(void)
     hid_t    dataset, dset2;    /* Dataset ID            */
     hid_t    group, group2;  /* Group ID                     */
     hid_t    sid1,           /* Dataspace IDs        */
-                sid2;
+                sid2, sid3;
     hid_t    tid1, tid2;     /* Datatype ID            */
     hsize_t    dims1[] = {SPACE1_DIM1},
-                dims2[] = {SPACE2_DIM1, SPACE2_DIM2};
+                dims2[] = {SPACE2_DIM1, SPACE2_DIM2},
+                dims3[] = {2};
     hsize_t    start[SPACE2_RANK];     /* Starting location of hyperslab */
     hsize_t    stride[SPACE2_RANK];    /* Stride of hyperslab */
     hsize_t    count[SPACE2_RANK];     /* Element count of hyperslab */
@@ -1472,8 +1473,8 @@ test_reference_compat(void)
     /* Allocate write & read buffers */
     wbuf_obj = (href_t *)HDcalloc(sizeof(href_t), SPACE1_DIM1);
     rbuf_obj = (href_t *)HDmalloc(sizeof(href_t) * SPACE1_DIM1);
-    wbuf_reg = (href_t *)HDcalloc(sizeof(href_t), SPACE1_DIM1);
-    rbuf_reg = (href_t *)HDmalloc(sizeof(href_t) * SPACE1_DIM1);
+    wbuf_reg = (href_t *)HDcalloc(sizeof(href_t), 2);
+    rbuf_reg = (href_t *)HDmalloc(sizeof(href_t) * 2);
 
     /* Create file */
     fid1 = H5Fcreate(FILE1, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -1486,6 +1487,10 @@ test_reference_compat(void)
     /* Create another dataspace for datasets */
     sid2 = H5Screate_simple(SPACE2_RANK, dims2, NULL);
     CHECK(sid2, FAIL, "H5Screate_simple");
+
+    /* Create another dataspace for datasets */
+    sid3 = H5Screate_simple(SPACE1_RANK, dims3, NULL);
+    CHECK(sid3, FAIL, "H5Screate_simple");
 
     /* Create a group */
     group = H5Gcreate2(fid1, "Group1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -1563,7 +1568,7 @@ test_reference_compat(void)
     CHECK(ret, FAIL, "H5Dclose");
 
     /* Create a dataset with region reference datatype */
-    dataset = H5Dcreate2(fid1, "Dataset4", H5T_STD_REF_REG, sid1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    dataset = H5Dcreate2(fid1, "Dataset4", H5T_STD_REF_REG, sid3, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Dcreate2");
 
     /* Select 6x6 hyperslab for first reference */
@@ -1609,6 +1614,8 @@ test_reference_compat(void)
     ret = H5Sclose(sid1);
     CHECK(ret, FAIL, "H5Sclose");
     ret = H5Sclose(sid2);
+    CHECK(ret, FAIL, "H5Sclose");
+    ret = H5Sclose(sid3);
     CHECK(ret, FAIL, "H5Sclose");
 
     /* Close file */
