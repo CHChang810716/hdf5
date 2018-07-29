@@ -54,7 +54,11 @@ typedef __int64             h5_stat_size_t;
  * Also note that the variadic macro is using a VC++ extension
  * where the comma is dropped if nothing is passed to the ellipsis.
  */
-#define HDopen(S,F,...)       _open(S, F | _O_BINARY, __VA_ARGS__)
+#ifdef _MSC_VER
+  #define HDopen(S,F,...)     _open(S, F | _O_BINARY, __VA_ARGS__)
+#else
+  #define HDopen(S,F,...)     _open(S, F | _O_BINARY, ## __VA_ARGS__)
+#endif
 #define HDread(F,M,Z)       _read(F,M,Z)
 #define HDrmdir(S)          _rmdir(S)
 #define HDsetvbuf(F,S,M,Z)  setvbuf(F,S,M,(Z>1?Z:2))

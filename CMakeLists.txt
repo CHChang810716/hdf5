@@ -1,5 +1,12 @@
 cmake_minimum_required (VERSION 3.10)
-PROJECT (HDF5 C CXX)
+
+include(config/cmake/HunterGate.cmake)
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.23.4.tar.gz"
+    SHA1 "8b2255921208517a55c9533c500131387e3c3dd0"
+)
+
+project (HDF5 LANGUAGES C CXX)
 
 #-----------------------------------------------------------------------------
 # Instructions for use : Normal Build
