@@ -49,6 +49,7 @@ hid_t H5E_ATOM_g           = FAIL;      /* Object atom */
 hid_t H5E_NONE_MAJOR_g     = FAIL;      /* No error */
 hid_t H5E_SLIST_g          = FAIL;      /* Skip Lists */
 hid_t H5E_ARGS_g           = FAIL;      /* Invalid arguments to routine */
+hid_t H5E_CONTEXT_g        = FAIL;      /* API Context */
 hid_t H5E_EARRAY_g         = FAIL;      /* Extensible Array */
 hid_t H5E_PLINE_g          = FAIL;      /* Data filters */
 hid_t H5E_ERROR_g          = FAIL;      /* Error API */
@@ -178,7 +179,8 @@ hid_t H5E_CANTRESIZE_g     = FAIL;      /* Unable to resize a metadata cache ent
 hid_t H5E_CANTDEPEND_g     = FAIL;      /* Unable to create a flush dependency */
 hid_t H5E_CANTUNDEPEND_g   = FAIL;      /* Unable to destroy a flush dependency */
 hid_t H5E_CANTNOTIFY_g     = FAIL;      /* Unable to notify object about action */
-hid_t H5E_LOGFAIL_g        = FAIL;      /* Failure in the cache logging framework */
+hid_t H5E_LOGGING_g        = FAIL;      /* Failure in the cache logging framework */
+hid_t H5E_LOGFAIL_g        = FAIL;      /* old H5E_LOGGING_g (maintained for binary compatibility) */
 hid_t H5E_CANTCORK_g       = FAIL;      /* Unable to cork an object */
 hid_t H5E_CANTUNCORK_g     = FAIL;      /* Unable to uncork an object */
 

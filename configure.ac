@@ -24,7 +24,7 @@ AC_PREREQ([2.69])
 ## NOTE: Do not forget to change the version number here when we do a
 ## release!!!
 ##
-AC_INIT([HDF5], [1.10.2], [help@hdfgroup.org])
+AC_INIT([HDF5], [1.10.5], [help@hdfgroup.org])
 
 AC_CONFIG_SRCDIR([src/H5.c])
 AC_CONFIG_HEADERS([src/H5config.h])
@@ -411,7 +411,7 @@ AC_CHECK_SIZEOF([double])
 AC_CHECK_SIZEOF([long double])
 
 ## ----------------------------------------------------------------------
-## Check for non-standard extenstion __FLOAT128
+## Check for non-standard extension __FLOAT128
 ##
 HAVE_FLOAT128=0
 HAVE_QUADMATH=0
@@ -848,19 +848,6 @@ AC_SUBST([RUNPARALLEL])
 AC_SUBST([TESTPARALLEL])
 
 ## ----------------------------------------------------------------------
-## Disable shared libraries on CYGWIN. (LK - 04/16/15)
-## A number of tests run by "make check" fail on CYGWIN, so for HDF5 v1.8.15
-## we will change the default for shared libraries to disabled.
-
-
-case "`uname`" in
-  CYGWIN*)
-    enable_shared="no"
-    CHECK_WARN="Shared libraries are not currently supported on CYGWIN."
-    ;;
-esac
-
-## ----------------------------------------------------------------------
 ## Check if they would like the Java native interface (JNI) compiled
 ##
 
@@ -1144,11 +1131,12 @@ case "$host_cpu-$host_vendor-$host_os" in
     ## functionality so clock_gettime and CLOCK_MONOTONIC are defined
     ## correctly. This was later updated to 200112L so that
     ## posix_memalign() is visible for the direct VFD code on Linux
-    ## systems.
+    ## systems. Even later, this was changed to 200809L to support
+    ## pread/pwrite in VFDs.
     ##
     ## POSIX feature information can be found in the gcc manual at:
     ## http://www.gnu.org/s/libc/manual/html_node/Feature-Test-Macros.html
-    H5_CPPFLAGS="-D_POSIX_C_SOURCE=200112L $H5_CPPFLAGS"
+    H5_CPPFLAGS="-D_POSIX_C_SOURCE=200809L $H5_CPPFLAGS"
 
     ## Need to add this so that O_DIRECT is visible for the direct
     ## VFD on Linux systems.
@@ -1224,6 +1212,15 @@ EOF
 AC_CHECK_SIZEOF([bool])
 fi
 
+AC_CHECK_SIZEOF(time_t, [], [
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+])
+
 ## Checkpoint the cache
 AC_CACHE_SAVE
 
@@ -1275,8 +1272,8 @@ AC_ARG_WITH([dmalloc],
                             [Use dmalloc memory debugging aid [default=no]])],,
             [withval=no])
 
-case $withval in
-  yes)
+case "X-$withval" in
+  X-yes)
     HAVE_DMALLOC="yes"
     AC_CHECK_HEADERS([dmalloc.h],, [unset HAVE_DMALLOC])
     if test "x$HAVE_DMALLOC" = "xyes"; then
@@ -1286,7 +1283,7 @@ case $withval in
       AC_MSG_ERROR([couldn't find dmalloc library])
     fi
     ;;
-  no)
+  X-|X-no|X-none)
     HAVE_DMALLOC="no"
     AC_MSG_CHECKING([for dmalloc library])
     AC_MSG_RESULT([suppressed])
@@ -1354,8 +1351,8 @@ AC_ARG_WITH([zlib],
                              filter [default=yes]])],,
             [withval=yes])
 
-case $withval in
-  yes)
+case "X-$withval" in
+  X-yes)
     HAVE_ZLIB="yes"
     AC_CHECK_HEADERS([zlib.h], [HAVE_ZLIB_H="yes"], [unset HAVE_ZLIB])
     if test "x$HAVE_ZLIB" = "xyes" -a "x$HAVE_ZLIB_H" = "xyes"; then
@@ -1369,7 +1366,7 @@ case $withval in
       AC_CHECK_FUNC([compress2], [HAVE_COMPRESS2="yes"])
     fi
     ;;
-  no)
+  X-|X-no|X-none)
     HAVE_ZLIB="no"
     AC_MSG_CHECKING([for zlib])
     AC_MSG_RESULT([suppressed])
@@ -1448,8 +1445,8 @@ AC_ARG_WITH([szlib],
                              filter [default=no]])],,
             [withval=no])
 
-case $withval in
-  yes)
+case "X-$withval" in
+  X-yes)
     HAVE_SZLIB="yes"
     AC_CHECK_HEADERS([szlib.h], [HAVE_SZLIB_H="yes"], [unset HAVE_SZLIB])
     if test "x$HAVE_SZLIB" = "xyes" -a "x$HAVE_SZLIB_H" = "xyes"; then
@@ -1459,7 +1456,7 @@ case $withval in
       AC_MSG_ERROR([couldn't find szlib library])
     fi
     ;;
-  no)
+  X-|X-no|X-none)
     HAVE_SZLIB="no"
     AC_MSG_CHECKING([for szlib])
     AC_MSG_RESULT([suppressed])
@@ -1954,12 +1951,12 @@ AC_DEFINE_UNQUOTED([PRINTF_LL_WIDTH], ["$hdf5_cv_printf_ll"],
 ## around to help people migrate to 1.10.x and newer versions.
 ##
 AC_ARG_ENABLE([debug],
-              [AS_HELP_STRING([--enable-debug], [DEPRECATED: use --enable-build-mode=debug])],
-              [AC_MSG_ERROR([--enable-debug is deprecated, use --enable-build-mode=debug instead.])])
+              [AS_HELP_STRING([--enable-debug], [OPTION CHANGE: use --enable-build-mode=debug])],
+              [AC_MSG_ERROR([--enable-debug is no longer supported, use --enable-build-mode=debug instead.])])
 
 AC_ARG_ENABLE([production],
-              [AS_HELP_STRING([--enable-production], [DEPRECATED: use --enable-build-mode=production])],
-              [AC_MSG_ERROR([--enable-production is deprecated, use --enable-build-mode=production instead.])])
+              [AS_HELP_STRING([--enable-production], [OPTION CHANGE: use --enable-build-mode=production])],
+              [AC_MSG_ERROR([--enable-production is no longer supported, use --enable-build-mode=production instead.])])
 
 
 ## ----------------------------------------------------------------------
@@ -2243,7 +2240,7 @@ AC_SUBST([INTERNAL_DEBUG_OUTPUT])
 ## are not listed in the "all" packages list.
 ##
 ## all_packages="AC,B,B2,D,F,FA,FL,FS,HL,I,O,S,ST,T,Z"
-all_packages="AC,B2,D,F,HL,I,O,S,ST,T,Z"
+all_packages="AC,B2,CX,D,F,HL,I,O,S,ST,T,Z"
 
 case "X-$INTERNAL_DEBUG_OUTPUT" in
   X-yes|X-all)
@@ -2299,40 +2296,6 @@ case "X-$CODESTACK" in
     ;;
   *)
       AC_MSG_ERROR([Unrecognized value: $CODESTACK])
-    ;;
-esac
-
-## ----------------------------------------------------------------------
-## Check if they would like the metadata trace file code compiled in
-##
-AC_MSG_CHECKING([whether metadata trace file code is enabled])
-AC_ARG_ENABLE([metadata-trace-file],
-              [AS_HELP_STRING([--enable-metadata-trace-file],
-                              [Enable metadata trace file collection.
-                               [default=no]
-                              ])],
-              [METADATATRACEFILE=$enableval])
-
-## Set the default level.
-if test "X-$METADATATRACEFILE" = X- ; then
-  METADATATRACEFILE=no
-fi
-
-## Allow this variable to be substituted in
-## other files (src/libhdf5.settings.in, etc.)
-AC_SUBST([METADATATRACEFILE])
-
-case "X-$METADATATRACEFILE" in
-  X-yes)
-      AC_MSG_RESULT([yes])
-      AC_DEFINE([METADATA_TRACE_FILE], [1],
-                [Define if the metadata trace file code is to be compiled in])
-    ;;
-  X-no)
-      AC_MSG_RESULT([no])
-    ;;
-  *)
-      AC_MSG_ERROR([Unrecognized value: $METADATATRACEFILE])
     ;;
 esac
 
@@ -2545,6 +2508,8 @@ esac
 AC_SUBST([ADD_PARALLEL_FILES]) ADD_PARALLEL_FILES="no"
 AC_SUBST([MPE]) MPE=no
 AC_SUBST([INSTRUMENT_LIBRARY]) INSTRUMENT_LIBRARY=no
+AC_SUBST([PARALLEL_FILTERED_WRITES])
+AC_SUBST([LARGE_PARALLEL_IO])
 
 if test -n "$PARALLEL"; then
   ## The 'testpar' directory should participate in the build
@@ -2700,6 +2665,61 @@ if test -n "$PARALLEL"; then
   if test "X-$MPE" = "X-yes"; then
     AC_DEFINE([HAVE_MPE], [1], [Define if we have MPE support])
   fi
+
+  ## ----------------------------------------------------------------------
+  ## Check for the MPI-3 functions necessary for the Parallel Compression
+  ## feature. If these are not present, issue a warning that Parallel
+  ## Compression will be disabled.
+  ##
+  AC_MSG_CHECKING([for MPI_Mprobe and MPI_Imrecv functions])
+
+  AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+          [[
+              #include <mpi.h>
+          ]],
+          [[
+              MPI_Message message;
+              MPI_Init(0, (void *) 0);
+              MPI_Mprobe(0, 0, 0, &message, (void *) 0);
+              MPI_Imrecv((void *) 0, 0, 0, (void *) 0, (void *) 0);
+          ]]
+      )],
+      [AC_MSG_RESULT([yes])
+       PARALLEL_FILTERED_WRITES=yes],
+      [AC_MSG_RESULT([no])
+       AC_MSG_WARN([A simple MPI program using the MPI_Mprobe and MPI_Imrecv functions could not be compiled and linked.
+                    Parallel writes of filtered data will be disabled.])
+       PARALLEL_FILTERED_WRITES=no]
+  )
+
+  ## ----------------------------------------------------------------------
+  ## Check for the MPI-3 functions necessary for the big I/O feature.
+  ## If these are not present, issue a warning that the big I/O feature
+  ## will be disabled.
+  ##
+  AC_MSG_CHECKING([for MPI_Get_elements_x and MPI_Type_size_x functions])
+
+  AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+          [[
+              #include <mpi.h>
+          ]],
+          [[
+              MPI_Count count;
+              MPI_Init(0, (void *) 0);
+              MPI_Get_elements_x(0, 0, &count);
+              MPI_Type_size_x(0, &count);
+          ]]
+      )],
+      [AC_MSG_RESULT([yes])
+       LARGE_PARALLEL_IO=yes],
+      [AC_MSG_RESULT([no])
+       AC_MSG_WARN([A simple MPI program using the MPI_Get_elements_x and MPI_Type_size_x functions could not be compiled and linked.
+                    Reading/Writing >2GB of data in a single parallel I/O operation will be disabled.])
+       LARGE_PARALLEL_IO=no]
+  )
+
 fi
 
 ## ----------------------------------------------------------------------
@@ -2951,6 +2971,30 @@ else
 fi
 
 ## ----------------------------------------------------------------------
+## Set the flag to indicate that the machine is IBM ppc64le and cannot
+## accurately convert some long double values.
+##
+AC_MSG_CHECKING([if the system is IBM ppc64le and cannot correctly convert some long double values])
+
+TEST_SRC="`(echo \"#define H5_DISABLE_SOME_LDOUBLE_CONV_TEST 1\"; cat $srcdir/config/cmake/ConversionTests.c)`"
+
+if test ${ac_cv_sizeof_long_double} = 0; then
+   hdf5_cv_disable_some_ldouble_conv=${hdf5_cv_disable_some_ldouble_conv=no}
+else
+   AC_CACHE_VAL([hdf5_cv_disable_some_ldouble_conv],
+        [AC_RUN_IFELSE([AC_LANG_SOURCE([$TEST_SRC])],
+        [hdf5_cv_disable_some_ldouble_conv=yes], [hdf5_cv_disable_some_ldouble_conv=no],[])])
+fi
+
+if test ${hdf5_cv_disable_some_ldouble_conv} = "yes"; then
+  AC_DEFINE([DISABLE_SOME_LDOUBLE_CONV], [1],
+            [Define if your system is IBM ppc64le and cannot convert some long double values correctly.])
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+fi
+
+## ----------------------------------------------------------------------
 ## Set some variables for general configuration information to be saved
 ## and installed with the libraries (used to generate libhdf5.settings).
 ##
@@ -2989,6 +3033,12 @@ AC_SUBST([WORDS_BIGENDIAN])
 
 ## Parallel support? (set above except empty if none)
 PARALLEL=${PARALLEL:-no}
+
+## Parallel writes to filtered datasets support?
+PARALLEL_FILTERED_WRITES=${PARALLEL_FILTERED_WRITES:-no}
+
+## >2GB writes in parallel support?
+LARGE_PARALLEL_IO=${LARGE_PARALLEL_IO:-no}
 
 ## Compiler with version information. This consists of the full path
 ## name of the compiler and the reported version number.
@@ -3160,6 +3210,8 @@ elif test "X$withval" = "Xv18"; then
 elif test "X$withval" = "Xv110"; then
     AC_MSG_RESULT([v110])
     DEFAULT_API_VERSION=v110
+    AC_DEFINE([USE_110_API_DEFAULT], [1],
+              [Define using v1.10 public API symbols by default])
 else
     AC_MSG_ERROR([invalid version of public symbols given])
 fi
@@ -3206,6 +3258,47 @@ case "X-$STRICT_FORMAT_CHECKS" in
     ;;
   *)
     AC_MSG_ERROR([Unrecognized value: $STRICT_FORMAT_CHECKS])
+    ;;
+esac
+
+
+## ----------------------------------------------------------------------
+## Enable use of pread/pwrite instead of read/write in certain VFDs.
+##
+AC_SUBST([PREADWRITE])
+
+## Check these first to avoid interspersed output in the AC_ARG_ENABLE line
+## below. (Probably overkill to check for both, but we'll be extra careful)
+PREADWRITE_HAVE_BOTH=yes
+AC_CHECK_FUNC([pread], [], [PREADWRITE_HAVE_BOTH=no])
+AC_CHECK_FUNC([pwrite], [], [PREADWRITE_HAVE_BOTH=no])
+
+AC_MSG_CHECKING([whether to use pread/pwrite instead of read/write in certain VFDs])
+AC_ARG_ENABLE([preadwrite],
+              [AS_HELP_STRING([--enable-preadwrite],
+                              [Enable using pread/pwrite instead of read/write in sec2/log/core VFDs.
+                              [default=yes if pread/pwrite are present]])],
+              [PREADWRITE=$enableval])
+
+## Set the default level.
+if test "X-$PREADWRITE" = X- ; then
+  PREADWRITE=yes
+fi
+
+case "X-$PREADWRITE" in
+  X-yes)
+      if test "X-$PREADWRITE_HAVE_BOTH" = "X-yes"; then
+        AC_DEFINE([HAVE_PREADWRITE], [1], [Define if both pread and pwrite exist.])
+        AC_MSG_RESULT([yes])
+      else
+        AC_MSG_RESULT([no])
+      fi
+    ;;
+  X-no)
+      AC_MSG_RESULT([no])
+    ;;
+  *)
+      AC_MSG_ERROR([Unrecognized value: $PREADWRITE])
     ;;
 esac
 
@@ -3377,6 +3470,7 @@ AC_CONFIG_FILES([src/libhdf5.settings
                  src/Makefile
                  test/Makefile
                  test/H5srcdir_str.h
+                 test/testabort_fail.sh
                  test/testcheck_version.sh
                  test/testerror.sh
                  test/testflushrefresh.sh
@@ -3384,10 +3478,10 @@ AC_CONFIG_FILES([src/libhdf5.settings
                  test/testlinks_env.sh
                  test/testswmr.sh
                  test/testvdsswmr.sh
-                 test/test_filenotclosed.sh
                  test/test_filter_plugin.sh
                  test/test_usecases.sh
                  testpar/Makefile
+                 testpar/testpflush.sh
                  tools/Makefile
                  tools/lib/Makefile
                  tools/src/Makefile

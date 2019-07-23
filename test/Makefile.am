@@ -29,12 +29,13 @@ AM_CPPFLAGS+=-I$(top_srcdir)/src -I$(top_builddir)/src
 #       testflushrefresh.sh: flushrefresh
 #       testswmr.sh: swmr*
 #       testvdsswmr.sh: vds_swmr*
-#       test_filenotclosed.sh: filenotclosed.c
+#       testabort_fail.sh: filenotclosed.c and del_many_dense_attrs.c
 #       test_filter_plugin.sh: filter_plugin.c
 #       test_usecases.sh: use_append_chunk, use_append_mchunks, use_disable_mdc_flushes
-TEST_SCRIPT = testerror.sh testlibinfo.sh testcheck_version.sh testlinks_env.sh test_filenotclosed.sh\
-    testswmr.sh testvdsswmr.sh testflushrefresh.sh test_usecases.sh
-SCRIPT_DEPEND = error_test$(EXEEXT) err_compat$(EXEEXT) links_env$(EXEEXT) test_filenotclosed$(EXEEXT) \
+TEST_SCRIPT = testerror.sh testlibinfo.sh testcheck_version.sh testlinks_env.sh \
+    testswmr.sh testvdsswmr.sh testflushrefresh.sh test_usecases.sh testabort_fail.sh
+SCRIPT_DEPEND = error_test$(EXEEXT) err_compat$(EXEEXT) links_env$(EXEEXT) \
+    filenotclosed$(EXEEXT) del_many_dense_attrs$(EXEEXT) \
     flushrefresh$(EXEEXT) use_append_chunk$(EXEEXT) use_append_mchunks$(EXEEXT) use_disable_mdc_flushes$(EXEEXT) \
     swmr_generator$(EXEEXT) swmr_reader$(EXEEXT) swmr_writer$(EXEEXT) \
     swmr_remove_reader$(EXEEXT) swmr_remove_writer$(EXEEXT) swmr_addrem_writer$(EXEEXT) \
@@ -55,11 +56,12 @@ TEST_PROG= testhdf5 \
            cache cache_api cache_image cache_tagging lheap ohdr stab gheap \
            evict_on_close farray earray btree2 fheap \
            pool accum hyperslab istore bittests dt_arith page_buffer \
-           dtypes dsets cmpd_dset filter_fail extend external efc objcopy links unlink \
-           twriteorder big mtime fillval mount flush1 flush2 app_ref enum \
-           set_extent ttsafe enc_dec_plist enc_dec_plist_cross_platform\
-           getname vfd ntypes dangle dtransform reserved cross_read \
-           freespace mf vds file_image unregister cache_logging cork swmr
+           dtypes dsets chunk_info cmpd_dset filter_fail extend direct_chunk \
+           external efc objcopy links unlink twriteorder big mtime fillval mount \
+           flush1 flush2 app_ref enum set_extent ttsafe enc_dec_plist \
+           enc_dec_plist_cross_platform getname vfd ntypes dangle dtransform \
+           reserved cross_read freespace mf vds file_image unregister \
+           cache_logging cork swmr
 
 # List programs to be built when testing here.
 # error_test and err_compat are built at the same time as the other tests, but executed by testerror.sh.
@@ -67,7 +69,7 @@ TEST_PROG= testhdf5 \
 # accum_swmr_reader is used by accum.c.
 # atomic_writer and atomic_reader are standalone programs.
 # links_env is used by testlinks_env.sh
-# filenotclosed is used by test_filenotclosed.sh
+# filenotclosed and del_many_dense_attrs are used by testabort_fail.sh
 # flushrefresh is used by testflushrefresh.sh.
 # use_append_chunk, use_append_mchunks and use_disable_mdc_flushes are used by test_usecases.sh
 # swmr_* files (besides swmr.c) are used by testswmr.sh.
@@ -77,7 +79,8 @@ TEST_PROG= testhdf5 \
 # and this lets automake keep all its test programs in one place.
 check_PROGRAMS=$(TEST_PROG) error_test err_compat tcheck_version \
     testmeta accum_swmr_reader atomic_writer atomic_reader \
-    links_env filenotclosed flushrefresh use_append_chunk use_append_mchunks use_disable_mdc_flushes \
+    links_env filenotclosed del_many_dense_attrs flushrefresh \
+    use_append_chunk use_append_mchunks use_disable_mdc_flushes \
     swmr_generator swmr_start_write swmr_reader swmr_writer swmr_remove_reader \
     swmr_remove_writer swmr_addrem_writer swmr_sparse_reader swmr_sparse_writer \
     swmr_check_compat_vfd vds_swmr_gen vds_swmr_reader vds_swmr_writer
@@ -114,6 +117,8 @@ if HAVE_SHARED_CONDITIONAL
   libfilter_plugin2_dsets_la_LDFLAGS=$(AM_LDFLAGS) -avoid-version -module -shared -export-dynamic -rpath /nowhere
   libfilter_plugin3_dsets_la_LDFLAGS=$(AM_LDFLAGS) -avoid-version -module -shared -export-dynamic -rpath /nowhere
   libfilter_plugin4_groups_la_LDFLAGS=$(AM_LDFLAGS) -avoid-version -module -shared -export-dynamic -rpath /nowhere
+  libfilter_plugin3_dsets_la_LIBADD=$(LIBHDF5)
+  libfilter_plugin4_groups_la_LIBADD=$(LIBHDF5)
 else
   # The libh5test library provides common support code for the tests.
   noinst_LTLIBRARIES=libh5test.la
@@ -162,6 +167,7 @@ CHECK_CLEANFILES+=accum.h5 cmpd_dset.h5 compact_dataset.h5 dataset.h5 dset_offse
     extend.h5 istore.h5 extlinks*.h5 frspace.h5 links*.h5 \
     sys_file1 tfile[1-7].h5 th5s[1-4].h5 lheap.h5 fheap.h5 ohdr.h5 \
     stab.h5 extern_[1-5].h5 extern_[1-4][rw].raw gheap[0-4].h5 \
+    ohdr_min_a.h5 ohdr_min_b.h5 min_dset_ohdr_testfile.h5 \
     dt_arith[1-2] links.h5 links[0-6]*.h5 extlinks[0-15].h5 tmp \
     big.data big[0-9][0-9][0-9][0-9][0-9].h5  \
     stdio.h5 sec2.h5 dtypes[0-9].h5 dtypes1[0].h5 dt_arith[1-2].h5 tattr.h5 \
@@ -190,7 +196,7 @@ CHECK_CLEANFILES+=accum.h5 cmpd_dset.h5 compact_dataset.h5 dataset.h5 dset_offse
     flushrefresh_VERIFICATION_DONE atomic_data accum_swmr_big.h5 ohdr_swmr.h5 \
     test_swmr*.h5 cache_logging.h5 cache_logging.out vds_swmr.h5 vds_swmr_src_*.h5 \
     swmr[0-2].h5 swmr_writer.out swmr_writer.log.* swmr_reader.out.* swmr_reader.log.* \
-    tbogus.h5.copy cache_image_test.h5
+    tbogus.h5.copy cache_image_test.h5 direct_chunk.h5
 
 # Sources for testhdf5 executable
 testhdf5_SOURCES=testhdf5.c tarray.c tattr.c tchecksum.c tconfig.c tfile.c \
@@ -205,6 +211,6 @@ use_disable_mdc_flushes_SOURCES=use_disable_mdc_flushes.c
 
 # Temporary files.
 DISTCLEANFILES=testerror.sh testlibinfo.sh testcheck_version.sh testlinks_env.sh test_filter_plugin.sh \
-    testswmr.sh testvdsswmr.sh test_usecases.sh testflushrefresh.sh test_filenotclosed.sh
+    testswmr.sh testvdsswmr.sh test_usecases.sh testflushrefresh.sh testabort_fail.sh
 
 include $(top_srcdir)/config/conclude.am

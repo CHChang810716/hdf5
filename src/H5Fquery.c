@@ -514,6 +514,25 @@ H5F_sym_leaf_k(const H5F_t *f)
 
 
 /*-------------------------------------------------------------------------
+ * Function: H5F_get_min_dset_ohdr
+ *
+ * Purpose:  Get the setting flag for minimized dataset object headers
+ *
+ * Return:   TRUE/FALSE as set in file
+ *-------------------------------------------------------------------------
+ */
+hbool_t
+H5F_get_min_dset_ohdr(const H5F_t *f)
+{
+    FUNC_ENTER_NOAPI_NOINIT_NOERR
+
+    HDassert(f);
+
+    FUNC_LEAVE_NOAPI(f->shared->crt_dset_min_ohdr_flag)
+} /* end H5F_get_min_dset_ohdr */
+
+
+/*-------------------------------------------------------------------------
  * Function: H5F_Kvalue
  *
  * Purpose:  Replaced a macro to retrieve a B-tree key value for a certain
@@ -1203,7 +1222,7 @@ H5F_get_first_alloc_dealloc(const H5F_t *f)
  *           Failure:    (can't happen)
  *-------------------------------------------------------------------------
  */
-hbool_t
+haddr_t
 H5F_get_eoa_pre_fsm_fsalloc(const H5F_t *f)
 {
     /* Use FUNC_ENTER_NOAPI_NOINIT_NOERR here to avoid performance issues */

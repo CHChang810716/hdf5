@@ -137,7 +137,7 @@ typedef enum H5D_mpio_actual_chunk_opt_mode_t {
 
 typedef enum H5D_mpio_actual_io_mode_t {
     /* The following four values are conveniently defined as a bit field so that
-     * we can switch from the default to indpendent or collective and then to
+     * we can switch from the default to independent or collective and then to
      * mixed without having to check the original value.
      *
      * NO_COLLECTIVE means that either collective I/O wasn't requested or that
@@ -164,7 +164,9 @@ typedef enum H5D_mpio_no_collective_cause_t {
     H5D_MPIO_MPI_OPT_TYPES_ENV_VAR_DISABLED = 0x08,
     H5D_MPIO_NOT_SIMPLE_OR_SCALAR_DATASPACES = 0x10,
     H5D_MPIO_NOT_CONTIGUOUS_OR_CHUNKED_DATASET = 0x20,
-    H5D_MPIO_NO_COLLECTIVE_MAX_CAUSE = 0x40
+    H5D_MPIO_PARALLEL_FILTERED_WRITES_DISABLED = 0x40,
+    H5D_MPIO_ERROR_WHILE_CHECKING_COLLECTIVE_POSSIBLE = 0x80,
+    H5D_MPIO_NO_COLLECTIVE_MAX_CAUSE = 0x100
 } H5D_mpio_no_collective_cause_t;
 
 /********************/
@@ -406,6 +408,8 @@ H5_DLL herr_t H5Pget_alloc_time(hid_t plist_id, H5D_alloc_time_t
 H5_DLL herr_t H5Pset_fill_time(hid_t plist_id, H5D_fill_time_t fill_time);
 H5_DLL herr_t H5Pget_fill_time(hid_t plist_id, H5D_fill_time_t
     *fill_time/*out*/);
+H5_DLL herr_t H5Pget_dset_no_attrs_hint(hid_t dcpl_id, hbool_t *minimize);
+H5_DLL herr_t H5Pset_dset_no_attrs_hint(hid_t dcpl_id, hbool_t minimize);
 
 /* Dataset access property list (DAPL) routines */
 H5_DLL herr_t H5Pset_chunk_cache(hid_t dapl_id, size_t rdcc_nslots,

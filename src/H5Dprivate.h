@@ -45,6 +45,7 @@
 #define H5D_CRT_FILL_VALUE_NAME    "fill_value"          /* Fill value */
 #define H5D_CRT_ALLOC_TIME_STATE_NAME "alloc_time_state" /* Space allocation time state */
 #define H5D_CRT_EXT_FILE_LIST_NAME "efl"                 /* External file list */
+#define H5D_CRT_MIN_DSET_HDR_SIZE_NAME "dset_oh_minimize" /* Minimize dataset object header */
 
 /* ========  Dataset access property names ======== */
 #define H5D_ACS_DATA_CACHE_NUM_SLOTS_NAME   "rdcc_nslots"    /* Size of raw data chunk cache(slots) */
@@ -94,7 +95,13 @@
 /* Definitions for all collective chunk instrumentation properties */
 #define H5D_XFER_COLL_CHUNK_SIZE        sizeof(unsigned)
 #define H5D_XFER_COLL_CHUNK_DEF         1
-#define H5D_XFER_COLL_CHUNK_FIX         0
+
+/* General collective I/O instrumentation properties */
+#define H5D_XFER_COLL_RANK0_BCAST_NAME  "coll_rank0_bcast"
+
+/* Definitions for general collective I/O instrumentation properties */
+#define H5D_XFER_COLL_RANK0_BCAST_SIZE  sizeof(hbool_t)
+#define H5D_XFER_COLL_RANK0_BCAST_DEF   FALSE
 #endif /* H5_HAVE_INSTRUMENTED_LIBRARY */
 
 /* Default temporary buffer size */
@@ -119,23 +126,6 @@
 
 /* Typedef for dataset in memory (defined in H5Dpkg.h) */
 typedef struct H5D_t H5D_t;
-
-/* Typedef for cached dataset transfer property list information */
-typedef struct H5D_dxpl_cache_t {
-    size_t max_temp_buf;        /* Maximum temporary buffer size (H5D_XFER_MAX_TEMP_BUF_NAME) */
-    void *tconv_buf;            /* Temporary conversion buffer (H5D_XFER_TCONV_BUF_NAME) */
-    void *bkgr_buf;             /* Background conversion buffer (H5D_XFER_BKGR_BUF_NAME) */
-    H5T_bkg_t bkgr_buf_type;    /* Background buffer type (H5D_XFER_BKGR_BUF_NAME) */
-    H5Z_EDC_t err_detect;       /* Error detection info (H5D_XFER_EDC_NAME) */
-    double btree_split_ratio[3];/* B-tree split ratios (H5D_XFER_BTREE_SPLIT_RATIO_NAME) */
-    size_t vec_size;            /* Size of hyperslab vector (H5D_XFER_HYPER_VECTOR_SIZE_NAME) */
-#ifdef H5_HAVE_PARALLEL
-    H5FD_mpio_xfer_t xfer_mode; /* Parallel transfer for this request (H5D_XFER_IO_XFER_MODE_NAME) */
-    H5FD_mpio_collective_opt_t coll_opt_mode; /* Parallel transfer with independent IO or collective IO with this mode */
-#endif /*H5_HAVE_PARALLEL*/
-    H5Z_cb_t filter_cb;         /* Filter callback function (H5D_XFER_FILTER_CB_NAME) */
-    H5Z_data_xform_t *data_xform_prop; /* Data transform prop (H5D_XFER_XFORM_NAME) */
-} H5D_dxpl_cache_t;
 
 /* Typedef for cached dataset creation property list information */
 typedef struct H5D_dcpl_cache_t {
@@ -170,22 +160,19 @@ typedef struct H5D_append_flush_t {
 /******************************/
 
 H5_DLL herr_t H5D_init(void);
-H5_DLL H5D_t *H5D_open(const H5G_loc_t *loc, hid_t dapl_id, hid_t dxpl_id);
+H5_DLL H5D_t *H5D_open(const H5G_loc_t *loc, hid_t dapl_id);
 H5_DLL herr_t H5D_close(H5D_t *dataset);
-H5_DLL herr_t H5D_mult_refresh_close(hid_t dset_id, hid_t dxpl_id);
-H5_DLL herr_t H5D_mult_refresh_reopen(H5D_t *dataset, hid_t dxpl_id);
+H5_DLL herr_t H5D_mult_refresh_close(hid_t dset_id);
+H5_DLL herr_t H5D_mult_refresh_reopen(H5D_t *dataset);
 H5_DLL H5O_loc_t *H5D_oloc(H5D_t *dataset);
 H5_DLL H5G_name_t *H5D_nameof(H5D_t *dataset);
 H5_DLL H5T_t *H5D_typeof(const H5D_t *dset);
-H5_DLL herr_t H5D_flush(const H5F_t *f, hid_t dxpl_id);
-H5_DLL hid_t H5D_get_create_plist(H5D_t *dset);
-H5_DLL hid_t H5D_get_access_plist(H5D_t *dset);
-H5_DLL hid_t H5D_get_space(H5D_t *dset);
-H5_DLL hid_t H5D_get_type(H5D_t *dset);
+H5_DLL herr_t H5D_flush_all(const H5F_t *f);
+H5_DLL hid_t H5D_get_create_plist(const H5D_t *dset);
+H5_DLL hid_t H5D_get_access_plist(const H5D_t *dset);
 
 /* Functions that operate on vlen data */
-H5_DLL herr_t H5D_vlen_reclaim(hid_t type_id, H5S_t *space, hid_t plist_id,
-    void *buf);
+H5_DLL herr_t H5D_vlen_reclaim(hid_t type_id, H5S_t *space, void *buf);
 
 /* Functions that operate on chunked storage */
 H5_DLL herr_t H5D_chunk_idx_reset(H5O_storage_chunk_t *storage, hbool_t reset_addr);
@@ -203,7 +190,7 @@ H5_DLL herr_t H5D_virtual_parse_source_name(const char *source_name,
 H5_DLL herr_t H5D_virtual_free_parsed_name(H5O_storage_virtual_name_seg_t *name_seg);
 
 /* Functions that operate on indexed storage */
-H5_DLL herr_t H5D_btree_debug(H5F_t *f, hid_t dxpl_id, haddr_t addr, FILE * stream,
+H5_DLL herr_t H5D_btree_debug(H5F_t *f, haddr_t addr, FILE * stream,
     int indent, int fwidth, unsigned ndims, const uint32_t *dim);
 
 #endif /* _H5Dprivate_H */

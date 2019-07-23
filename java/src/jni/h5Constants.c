@@ -21,8 +21,10 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <jni.h>
 #include "hdf5.h"
+#include <jni.h>
+#include <stdlib.h>
+#include "h5jni.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-prototypes"
@@ -643,6 +645,18 @@ Java_hdf_hdf5lib_HDF5Constants_H5O_1COPY_1WITHOUT_1ATTR_1FLAG(JNIEnv *env, jclas
 JNIEXPORT jint JNICALL
 Java_hdf_hdf5lib_HDF5Constants_H5O_1COPY_1PRESERVE_1NULL_1FLAG(JNIEnv *env, jclass cls){return H5O_COPY_PRESERVE_NULL_FLAG; }
 JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5O_1INFO_1BASIC(JNIEnv *env, jclass cls) { return H5O_INFO_BASIC; }
+JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5O_1INFO_1TIME(JNIEnv *env, jclass cls) { return H5O_INFO_TIME; }
+JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5O_1INFO_1NUM_1ATTRS(JNIEnv *env, jclass cls) { return H5O_INFO_NUM_ATTRS; }
+JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5O_1INFO_1HDR(JNIEnv *env, jclass cls) { return H5O_INFO_HDR; }
+JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5O_1INFO_1META_1SIZE(JNIEnv *env, jclass cls) { return H5O_INFO_META_SIZE; }
+JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5O_1INFO_1ALL(JNIEnv *env, jclass cls) { return H5O_INFO_ALL; }
+JNIEXPORT jint JNICALL
 Java_hdf_hdf5lib_HDF5Constants_H5O_1SHMESG_1NONE_1FLAG(JNIEnv *env, jclass cls){return H5O_SHMESG_NONE_FLAG; }
 JNIEXPORT jint JNICALL
 Java_hdf_hdf5lib_HDF5Constants_H5O_1SHMESG_1SDSPACE_1FLAG(JNIEnv *env, jclass cls){return H5O_SHMESG_SDSPACE_FLAG; }
@@ -1219,6 +1233,8 @@ JNIEXPORT jlong JNICALL
 Java_hdf_hdf5lib_HDF5Constants_H5T_1VARIABLE(JNIEnv *env, jclass cls) { return (int)H5T_VARIABLE; }
 JNIEXPORT jint JNICALL
 Java_hdf_hdf5lib_HDF5Constants_H5T_1VLEN(JNIEnv *env, jclass cls) { return H5T_VLEN; }
+JNIEXPORT jint JNICALL
+Java_hdf_hdf5lib_HDF5Constants_H5T_1VL_1T(JNIEnv *env, jclass cls) { return sizeof(hvl_t); }
 
 JNIEXPORT jint JNICALL
 Java_hdf_hdf5lib_HDF5Constants_H5Z_1CB_1CONT(JNIEnv *env, jclass cls) { return H5Z_CB_CONT; }

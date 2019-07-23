@@ -30,6 +30,7 @@
 
   set (LIST_OTHER_TEST_FILES
       ${HDF5_TOOLS_TEST_H5COPY_SOURCE_DIR}/testfiles/h5copy_misc1.out
+      ${HDF5_TOOLS_TEST_H5COPY_SOURCE_DIR}/testfiles/h5copy_misc1.err
       ${HDF5_TOOLS_TEST_H5COPY_SOURCE_DIR}/testfiles/tudfilter.h5.txt
       ${HDF5_TOOLS_TEST_H5COPY_SOURCE_DIR}/testfiles/tudfilter.h5_ERR.txt
       ${HDF5_TOOLS_TEST_H5COPY_SOURCE_DIR}/testfiles/h5copy_plugin_fail_ERR.out.h5.txt
@@ -128,9 +129,10 @@
   macro (ADD_SKIP_H5_TEST testname skipresultfile)
     if (NOT HDF5_ENABLE_USING_MEMCHECKER)
       add_test (
-          NAME H5COPY-${testname}-${skipresultfile}-SKIPPED
+          NAME H5COPY-${testname}-${skipresultfile}
           COMMAND ${CMAKE_COMMAND} -E echo "SKIP ${testname}-${skipresultfile} ${ARGN}"
       )
+      set_property(TEST H5COPY-${testname}-${skipresultfile} PROPERTY DISABLED)
     endif ()
   endmacro ()
 
@@ -249,6 +251,7 @@
               -D "TEST_OUTPUT=./testfiles/${testname}.out.out"
               -D "TEST_EXPECT=${resultcode}"
               -D "TEST_REFERENCE=./testfiles/${testname}.out"
+              -D "TEST_ERRREF=./testfiles/${testname}.err"
               -D "TEST_MASK=true"
               -P "${HDF_RESOURCES_EXT_DIR}/runTest.cmake"
       )

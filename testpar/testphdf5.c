@@ -547,6 +547,12 @@ int main(int argc, char **argv)
     AddTest("denseattr", test_dense_attr, NULL,
 	    "Store Dense Attributes", PARATESTFILE);
 
+    AddTest("noselcollmdread", test_partial_no_selection_coll_md_read, NULL,
+            "Collective Metadata read with some ranks having no selection", PARATESTFILE);
+    AddTest("MC coll MD read", test_multi_chunk_io_addrmap_issue, NULL,
+            "Collective MD read with multi chunk I/O (H5D__chunk_addrmap)", PARATESTFILE);
+    AddTest("LC coll MD read", test_link_chunk_io_sort_chunk_issue, NULL,
+            "Collective MD read with link chunk I/O (H5D__sort_chunk)", PARATESTFILE);
 
     /* Display testing information */
     TestInfo(argv[0]);

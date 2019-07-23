@@ -507,7 +507,7 @@ find_objs_cb(const char *name, const H5O_info_t *oinfo, const char *already_seen
                     if(H5Tcommitted(type) > 0) {
                         H5O_info_t type_oinfo;
 
-                        H5Oget_info(type, &type_oinfo);
+                        H5Oget_info2(type, &type_oinfo, H5O_INFO_BASIC);
                         if(search_obj(info->type_table, type_oinfo.addr) == NULL)
                             add_obj(info->type_table, type_oinfo.addr, name, FALSE);
                     } /* end if */
@@ -561,6 +561,8 @@ herr_t
 init_objs(hid_t fid, find_objs_t *info, table_t **group_table,
     table_t **dset_table, table_t **type_table)
 {
+    herr_t ret_value = SUCCEED;
+
     /* Initialize the tables */
     init_table(group_table);
     init_table(dset_table);
@@ -573,7 +575,20 @@ init_objs(hid_t fid, find_objs_t *info, table_t **group_table,
     info->dset_table = *dset_table;
 
     /* Find all shared objects */
-    return(h5trav_visit(fid, "/", TRUE, TRUE, find_objs_cb, NULL, info));
+    if((ret_value = h5trav_visit(fid, "/", TRUE, TRUE, find_objs_cb, NULL, info, H5O_INFO_BASIC)) < 0)
+        HGOTO_ERROR(FAIL, H5E_tools_min_id_g, "finding shared objects failed")
+
+done:
+    /* Release resources */
+    if(ret_value < 0) {
+        free_table(*group_table);
+        info->group_table = NULL;
+        free_table(*type_table);
+        info->type_table = NULL;
+        free_table(*dset_table);
+        info->dset_table = NULL;
+    }
+    return ret_value;
 }
 
 
@@ -729,7 +744,7 @@ H5tools_get_symlink_info(hid_t file_id, const char * linkpath, h5tool_link_info_
         }
 
         /* get target object info */
-        if(H5Oget_info_by_name(file_id, linkpath, &trg_oinfo, lapl) < 0) {
+        if(H5Oget_info_by_name2(file_id, linkpath, &trg_oinfo, H5O_INFO_BASIC, lapl) < 0) {
             if(link_info->opt.msg_mode == 1)
                 parallel_print("Warning: unable to get object information for <%s>\n", linkpath);
             HGOTO_DONE(FAIL);

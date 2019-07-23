@@ -116,7 +116,7 @@
 #endif
 
 /*
- * flock() in sys/file.h is used for the implemention of file locking.
+ * flock() in sys/file.h is used for the implementation of file locking.
  */
 #if defined(H5_HAVE_FLOCK) && defined(H5_HAVE_SYS_FILE_H)
 #   include <sys/file.h>
@@ -132,7 +132,7 @@
 
 /*
  * Unix ioctls.   These are used by h5ls (and perhaps others) to determine a
- * resonable output width.
+ * reasonable output width.
  */
 #ifdef H5_HAVE_SYS_IOCTL_H
 #   include <sys/ioctl.h>
@@ -1148,6 +1148,9 @@ typedef off_t               h5_stat_size_t;
 #ifndef HDpowf
     #define HDpowf(X,Y)   powf(X,Y)
 #endif /* HDpowf */
+#ifndef HDpread
+    #define HDpread(F,B,C,O)    pread(F,B,C,O)
+#endif /* HDpread */
 #ifndef HDprintf
     #define HDprintf(...)   HDfprintf(stdout, __VA_ARGS__)
 #endif /* HDprintf */
@@ -1160,6 +1163,9 @@ typedef off_t               h5_stat_size_t;
 #ifndef HDputs
     #define HDputs(S)    puts(S)
 #endif /* HDputs */
+#ifndef HDpwrite
+    #define HDpwrite(F,B,C,O)    pwrite(F,B,C,O)
+#endif /* HDpwrite */
 #ifndef HDqsort
     #define HDqsort(M,N,Z,F)  qsort(M,N,Z,F)
 #endif /* HDqsort*/
@@ -1987,6 +1993,11 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 #define H5_PACKAGE_INIT(pkg_init, err)
 #endif /* H5_MY_PKG */
 
+/* Forward declaration of H5CXpush() / H5CXpop() */
+/* (Including H5CXprivate.h creates bad circular dependencies - QAK, 3/18/2018) */
+H5_DLL herr_t H5CX_push(void);
+H5_DLL herr_t H5CX_pop(void);
+
 
 #ifndef NDEBUG
 #define FUNC_ENTER_CHECK_NAME(asrt)                                           \
@@ -2026,7 +2037,7 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 /* Local variables for API routines */
 #define FUNC_ENTER_API_VARS                                                   \
     MPE_LOG_VARS                                                              \
-    H5TRACE_DECL
+    H5TRACE_DECL                                                              \
 
 #define FUNC_ENTER_API_COMMON                                                 \
     FUNC_ENTER_API_VARS                                                       \
@@ -2046,6 +2057,10 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
                                                                               \
     /* Push the name of this function on the function stack */                \
     H5_PUSH_FUNC                                                              \
+                                                                              \
+    /* Push the API context */                                                \
+    if(H5CX_push() < 0)                                                       \
+        HGOTO_ERROR(H5E_FUNC, H5E_CANTSET, err, "can't set API context")      \
                                                                               \
     BEGIN_MPE_LOG
 
@@ -2069,7 +2084,7 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 /*
  * Use this macro for API functions that shouldn't perform _any_ initialization
  *      of the library or an interface, just perform tracing, etc.  Examples
- *      are: H5check_version, etc.
+ *      are: H5allocate_memory, H5is_library_threadsafe, etc.
  *
  */
 #define FUNC_ENTER_API_NOINIT {{                                              \
@@ -2168,23 +2183,19 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 /* Use the following two macros as replacements for the FUNC_ENTER_NOAPI
  * and FUNC_ENTER_NOAPI_NOINIT macros when the function needs to set
  * up a metadata tag. */
-#define FUNC_ENTER_NOAPI_TAG(dxpl_id, tag, err) {                             \
+#define FUNC_ENTER_NOAPI_TAG(tag, err) {                                      \
     haddr_t prev_tag = HADDR_UNDEF;                                           \
-    hid_t tag_dxpl_id = dxpl_id;                                              \
                                                                               \
     FUNC_ENTER_COMMON(!H5_IS_API(FUNC));                                      \
-    if(H5AC_tag(tag_dxpl_id, tag, &prev_tag)<0)                               \
-        HGOTO_ERROR(H5_MY_PKG_ERR, H5E_CANTTAG, err, "unable to apply metadata tag") \
+    H5AC_tag(tag, &prev_tag);                                                 \
     FUNC_ENTER_NOAPI_INIT(err)                                                \
     if(H5_PKG_INIT_VAR || !H5_TERM_GLOBAL) {
 
-#define FUNC_ENTER_NOAPI_NOINIT_TAG(dxpl_id, tag, err) {                      \
+#define FUNC_ENTER_NOAPI_NOINIT_TAG(tag) {                                    \
     haddr_t prev_tag = HADDR_UNDEF;                                           \
-    hid_t tag_dxpl_id = dxpl_id;                                              \
                                                                               \
     FUNC_ENTER_COMMON(!H5_IS_API(FUNC));                                      \
-    if(H5AC_tag(tag_dxpl_id, tag, &prev_tag)<0)                               \
-        HGOTO_ERROR(H5_MY_PKG_ERR, H5E_CANTTAG, err, "unable to apply metadata tag") \
+    H5AC_tag(tag, &prev_tag);                                                 \
     H5_PUSH_FUNC                                                              \
     if(H5_PKG_INIT_VAR || !H5_TERM_GLOBAL) {
 
@@ -2202,13 +2213,11 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 
 /* Use the following macro as replacement for the FUNC_ENTER_PACKAGE
  * macro when the function needs to set up a metadata tag. */
-#define FUNC_ENTER_PACKAGE_TAG(dxpl_id, tag, err) {                           \
+#define FUNC_ENTER_PACKAGE_TAG(tag) {                                         \
     haddr_t prev_tag = HADDR_UNDEF;                                           \
-    hid_t tag_dxpl_id = dxpl_id;                                              \
                                                                               \
     FUNC_ENTER_COMMON(H5_IS_PKG(FUNC));                                       \
-    if(H5AC_tag(tag_dxpl_id, tag, &prev_tag) < 0)                             \
-        HGOTO_ERROR(H5_MY_PKG_ERR, H5E_CANTTAG, err, "unable to apply metadata tag") \
+    H5AC_tag(tag, &prev_tag);                                                 \
     H5_PUSH_FUNC                                                              \
     if(H5_PKG_INIT_VAR || !H5_TERM_GLOBAL) {
 
@@ -2232,13 +2241,11 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 
 /* Use the following macro as replacement for the FUNC_ENTER_STATIC
  * macro when the function needs to set up a metadata tag. */
-#define FUNC_ENTER_STATIC_TAG(dxpl_id, tag, err) {                            \
+#define FUNC_ENTER_STATIC_TAG(tag) {                                          \
     haddr_t prev_tag = HADDR_UNDEF;                                           \
-    hid_t tag_dxpl_id = dxpl_id;                                              \
                                                                               \
     FUNC_ENTER_COMMON(H5_IS_PKG(FUNC));                                       \
-    if(H5AC_tag(tag_dxpl_id, tag, &prev_tag) < 0)                             \
-        HGOTO_ERROR(H5_MY_PKG_ERR, H5E_CANTTAG, err, "unable to apply metadata tag") \
+    H5AC_tag(tag, &prev_tag);                                                 \
     H5_PUSH_FUNC                                                              \
     if(H5_PKG_INIT_VAR || !H5_TERM_GLOBAL) {
 
@@ -2256,11 +2263,15 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
     H5_API_UNLOCK                                                             \
     H5_API_SET_CANCEL
 
-#define FUNC_LEAVE_API(ret_value)                                             \
+#define FUNC_LEAVE_API_COMMON(ret_value)                                      \
         ;                                                                     \
     } /*end scope from end of FUNC_ENTER*/                                    \
     FINISH_MPE_LOG                                                            \
-    H5TRACE_RETURN(ret_value);                                                \
+    H5TRACE_RETURN(ret_value);
+
+#define FUNC_LEAVE_API(ret_value)                                             \
+    FUNC_LEAVE_API_COMMON(ret_value);                                         \
+    (void)H5CX_pop();                                                         \
     H5_POP_FUNC                                                               \
     if(err_occurred)                                                          \
        (void)H5E_dump_api_stack(TRUE);                                        \
@@ -2268,12 +2279,19 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
     return(ret_value);                                                        \
 }} /*end scope from beginning of FUNC_ENTER*/
 
-/* Use this macro to match the FUNC_ENTER_API_NOFS macro */
+/* Use this macro to match the FUNC_ENTER_API_NOINIT macro */
+#define FUNC_LEAVE_API_NOINIT(ret_value)                                      \
+    FUNC_LEAVE_API_COMMON(ret_value);                                         \
+    H5_POP_FUNC                                                               \
+    if(err_occurred)                                                          \
+       (void)H5E_dump_api_stack(TRUE);                                        \
+    FUNC_LEAVE_API_THREADSAFE                                                 \
+    return(ret_value);                                                        \
+}} /*end scope from beginning of FUNC_ENTER*/
+
+/* Use this macro to match the FUNC_ENTER_API_NOINIT_NOERR_NOFS macro */
 #define FUNC_LEAVE_API_NOFS(ret_value)                                        \
-        ;                                                                     \
-    } /*end scope from end of FUNC_ENTER*/                                    \
-    FINISH_MPE_LOG                                                            \
-    H5TRACE_RETURN(ret_value);                                                \
+    FUNC_LEAVE_API_COMMON(ret_value);                                         \
     FUNC_LEAVE_API_THREADSAFE                                                 \
     return(ret_value);                                                        \
 }} /*end scope from beginning of FUNC_ENTER*/
@@ -2304,11 +2322,10 @@ extern hbool_t H5_MPEinit_g;   /* Has the MPE Library been initialized? */
 } /*end scope from beginning of FUNC_ENTER*/
 
 /* Use this macro when exiting a function that set up a metadata tag */
-#define FUNC_LEAVE_NOAPI_TAG(ret_value, err)                                  \
+#define FUNC_LEAVE_NOAPI_TAG(ret_value)                                       \
         ;                                                                     \
     } /*end scope from end of FUNC_ENTER*/                                    \
-    if(H5AC_tag(tag_dxpl_id, prev_tag, NULL) < 0)                             \
-        HDONE_ERROR(H5E_CACHE, H5E_CANTTAG, err, "unable to apply metadata tag") \
+    H5AC_tag(prev_tag, NULL);                                                 \
     H5_POP_FUNC                                                               \
     return(ret_value);                                                        \
 } /*end scope from beginning of FUNC_ENTER*/
@@ -2566,15 +2583,12 @@ func_init_failed:                                                             \
 
 /* Macro to begin/end tagging (when FUNC_ENTER_*TAG macros are insufficient).
  * Make sure to use HGOTO_ERROR_TAG and HGOTO_DONE_TAG between these macros! */
-#define H5_BEGIN_TAG(dxpl, tag, err) {                                           \
-    haddr_t prv_tag = HADDR_UNDEF;                                               \
-    hid_t my_dxpl_id = dxpl;                                                     \
-    if(H5AC_tag(my_dxpl_id, tag, &prv_tag) < 0)                                  \
-        HGOTO_ERROR(H5_MY_PKG_ERR, H5E_CANTTAG, err, "unable to apply metadata tag")
+#define H5_BEGIN_TAG(tag) {                                                 \
+    haddr_t prv_tag = HADDR_UNDEF;                                          \
+    H5AC_tag(tag, &prv_tag);                                                \
 
-#define H5_END_TAG(err)                                                          \
-    if(H5AC_tag(my_dxpl_id, prv_tag, NULL) <0)                                   \
-        HGOTO_ERROR(H5_MY_PKG_ERR, H5E_CANTTAG, err, "unable to apply metadata tag") \
+#define H5_END_TAG                                                          \
+    H5AC_tag(prv_tag, NULL);                                                \
 }
 
 /* Compile-time "assert" macro */
@@ -2592,6 +2606,7 @@ H5_DLL void H5_term_library(void);
 H5_DLL int H5A_term_package(void);
 H5_DLL int H5A_top_term_package(void);
 H5_DLL int H5AC_term_package(void);
+H5_DLL int H5CX_term_package(void);
 H5_DLL int H5D_term_package(void);
 H5_DLL int H5D_top_term_package(void);
 H5_DLL int H5E_term_package(void);

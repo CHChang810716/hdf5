@@ -23,16 +23,6 @@ if (WIN32)
   find_program (WIX_EXECUTABLE candle  PATHS "${CPACK_WIX_ROOT}/bin")
 endif ()
 
-#-----------------------------------------------------------------------------
-# Add file(s) to CMake Install
-#-----------------------------------------------------------------------------
-if (NOT HDF5_INSTALL_NO_DEVELOPMENT)
-  install (
-      FILES ${PROJECT_BINARY_DIR}/H5pubconf.h
-      DESTINATION ${HDF5_INSTALL_INCLUDE_DIR}
-      COMPONENT headers
-  )
-endif ()
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install for import into other projects
@@ -133,8 +123,8 @@ else ()
   set (BYTESEX little-endian)
 endif ()
 configure_file (
-    ${HDF_RESOURCES_DIR}/libhdf5.settings.cmake.in 
-    ${HDF5_BINARY_DIR}/libhdf5.settings @ONLY
+    ${HDF_RESOURCES_DIR}/libhdf5.settings.cmake.in
+    ${HDF5_BINARY_DIR}/libhdf5.settings ESCAPE_QUOTES @ONLY
 )
 install (
     FILES ${HDF5_BINARY_DIR}/libhdf5.settings
@@ -143,7 +133,7 @@ install (
 )
 
 #-----------------------------------------------------------------------------
-# Configure the HDF518_Examples.cmake file and the examples
+# Configure the HDF5_Examples.cmake file and the examples
 #-----------------------------------------------------------------------------
 option (HDF5_PACK_EXAMPLES  "Package the HDF5 Library Examples Compressed File" OFF)
 if (HDF5_PACK_EXAMPLES)
@@ -224,6 +214,7 @@ if (NOT HDF5_EXTERNALLY_CONFIGURED)
     if (HDF5_PACK_INSTALL_DOCS)
       set (release_files
           ${release_files}
+          ${HDF5_SOURCE_DIR}/release_docs/INSTALL_Warnings.txt
           ${HDF5_SOURCE_DIR}/release_docs/INSTALL_CMake.txt
           ${HDF5_SOURCE_DIR}/release_docs/HISTORY-1_8.txt
           ${HDF5_SOURCE_DIR}/release_docs/INSTALL

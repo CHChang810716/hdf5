@@ -181,8 +181,6 @@ static void test_libver_bounds_datatype(hid_t fapl);
 static void test_libver_bounds_datatype_check(hid_t fapl, hid_t tid);
 static void test_libver_bounds_attributes(hid_t fapl);
 
-#define FILE8            "tfile8.h5"    /* Test file */
-
 #define DSET_NULL    "DSET_NULL"
 #define DSET        "DSET"
 #define DSETA        "DSETA"
@@ -4893,7 +4891,7 @@ test_libver_bounds_real(H5F_libver_t libver_create, unsigned oh_vers_create,
     /*
      * Make sure the root group has the correct object header version
      */
-    ret = H5Oget_info_by_name(file, "/", &oinfo, H5P_DEFAULT);
+    ret = H5Oget_info_by_name2(file, "/", &oinfo, H5O_INFO_HDR, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Oget_info_by_name");
     VERIFY(oinfo.hdr.version, oh_vers_create, "H5Oget_info_by_name");
 
@@ -4909,7 +4907,7 @@ test_libver_bounds_real(H5F_libver_t libver_create, unsigned oh_vers_create,
     file = H5Fopen("tfile5.h5", H5F_ACC_RDWR, fapl);
     CHECK(file, FAIL, "H5Fopen");
 
-    ret = H5Oget_info_by_name(file, "/", &oinfo, H5P_DEFAULT);
+    ret = H5Oget_info_by_name2(file, "/", &oinfo, H5O_INFO_HDR, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Oget_info_by_name");
     VERIFY(oinfo.hdr.version, oh_vers_create, "H5Oget_info_by_name");
 
@@ -4920,7 +4918,7 @@ test_libver_bounds_real(H5F_libver_t libver_create, unsigned oh_vers_create,
     group = H5Gcreate2(file, "/G1", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     CHECK(group, FAIL, "H5Gcreate");
 
-    ret = H5Oget_info(group, &oinfo);
+    ret = H5Oget_info2(group, &oinfo, H5O_INFO_HDR);
     CHECK(ret, FAIL, "H5Oget_info");
     VERIFY(oinfo.hdr.version, oh_vers_mod, "H5Oget_info");
 
@@ -4934,7 +4932,7 @@ test_libver_bounds_real(H5F_libver_t libver_create, unsigned oh_vers_create,
     group = H5Gcreate2(file, "/G1/G3", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     CHECK(group, FAIL, "H5Gcreate");
 
-    ret = H5Oget_info(group, &oinfo);
+    ret = H5Oget_info2(group, &oinfo, H5O_INFO_HDR);
     CHECK(ret, FAIL, "H5Oget_info_by_name");
     VERIFY(oinfo.hdr.version, oh_vers_mod, "H5Oget_info_by_name");
 
@@ -4944,7 +4942,7 @@ test_libver_bounds_real(H5F_libver_t libver_create, unsigned oh_vers_create,
     /*
      * Make sure the root group still has the correct object header version
      */
-    ret = H5Oget_info_by_name(file, "/", &oinfo, H5P_DEFAULT);
+    ret = H5Oget_info_by_name2(file, "/", &oinfo, H5O_INFO_HDR, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Oget_info_by_name");
     VERIFY(oinfo.hdr.version, oh_vers_create, "H5Oget_info_by_name");
 
@@ -4969,7 +4967,7 @@ test_libver_bounds_real(H5F_libver_t libver_create, unsigned oh_vers_create,
 #define VERBFNAME        "tverbounds_dspace.h5"
 #define VERBDSNAME       "dataset 1"
 #define SPACE1_DIM1     3
-static int
+static void
 test_libver_bounds_open(void)
 {
     hid_t file = -1;    /* File ID */
@@ -5642,7 +5640,7 @@ test_libver_bounds_obj(hid_t fapl)
     CHECK(fid, FAIL, "H5Fcreate");
 
     /* Get root group's object info */
-    ret = H5Oget_info_by_name(fid, "/", &oinfo, H5P_DEFAULT);
+    ret = H5Oget_info_by_name2(fid, "/", &oinfo, H5O_INFO_HDR, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Oget_info_by_name");
 
     /* Verify object header version is 2 because shared message is enabled */
@@ -5661,7 +5659,7 @@ test_libver_bounds_obj(hid_t fapl)
     CHECK(fid, FAIL, "H5Fcreate");
 
     /* Get root group's object info */
-    ret = H5Oget_info_by_name(fid, "/", &oinfo, H5P_DEFAULT);
+    ret = H5Oget_info_by_name2(fid, "/", &oinfo, H5O_INFO_HDR, H5P_DEFAULT);
     CHECK(ret, FAIL, "H5Oget_info_by_name");
 
     /* Verify object header version is as indicated by low_bound */
@@ -5716,7 +5714,7 @@ test_libver_bounds_obj(hid_t fapl)
                     VERIFY(ginfo.storage_type, H5G_STORAGE_TYPE_SYMBOL_TABLE, "H5Gget_info");
 
                 /* Get object header information */
-                ret = H5Oget_info_by_name(gid, GRP_NAME, &oinfo, H5P_DEFAULT);
+                ret = H5Oget_info_by_name2(gid, GRP_NAME, &oinfo, H5O_INFO_HDR, H5P_DEFAULT);
                 CHECK(ret, FAIL, "H5Oget_info_by_name");
 
                 /* Verify object header version as indicated by low_bound */
@@ -6935,7 +6933,7 @@ test_libver_macros2(void)
 **
 ****************************************************************/
 static void
-test_incr_filesize(const char *env_h5_drvr)
+test_incr_filesize(void)
 {
     hid_t    fid;                       /* File opened with read-write permission */
     h5_stat_size_t filesize;            /* Size of file when empty */
@@ -7050,6 +7048,132 @@ test_incr_filesize(const char *env_h5_drvr)
         CHECK(ret, FAIL, "H5Pclose");
     }
 } /* end test_incr_filesize() */
+
+/****************************************************************
+**
+**  test_min_dset_ohdr():
+**    Test API calls to toggle dataset object header minimization.
+**
+**  TODO (as separate function?):
+**    + setting persists between close and (re)open?
+**    + dataset header sizes created while changing value of toggle
+**
+****************************************************************/
+static void
+test_min_dset_ohdr(void)
+{
+    const char basename[]       = "min_dset_ohdr_testfile";
+    char filename[FILENAME_LEN] = "";
+    hid_t      file_id          = -1;
+    hid_t      file2_id         = -1;
+    hbool_t    minimize;
+    herr_t     ret;
+
+    MESSAGE(5, ("Testing dataset object header minimization\n"));
+
+    /*********/
+    /* SETUP */
+    /*********/
+
+    h5_fixname(basename, H5P_DEFAULT, filename, sizeof(filename));
+
+    file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    CHECK_I(file_id, "H5Fcreate");
+
+    /*********/
+    /* TESTS */
+    /*********/
+
+    /*----------------------------------------
+     * TEST default value
+     */
+    ret = H5Fget_dset_no_attrs_hint(file_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, FALSE, "minimize flag");
+
+    /*----------------------------------------
+     * TEST set to TRUE
+     */
+    ret = H5Fset_dset_no_attrs_hint(file_id, TRUE);
+    CHECK(ret, FAIL, "H5Fset_dset_no_attrs_hint");
+
+    ret = H5Fget_dset_no_attrs_hint(file_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, TRUE, "minimize flag");
+
+    /*----------------------------------------
+     * TEST second file open on same filename
+     */
+    file2_id = H5Fopen(filename, H5F_ACC_RDWR, H5P_DEFAULT);
+    CHECK_I(file2_id, "H5Fopen");
+
+    /* verify TRUE setting on second open
+     */
+    ret = H5Fget_dset_no_attrs_hint(file_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, TRUE, "minimize flag");
+
+    /* re-set to FALSE on first open
+     */
+    ret = H5Fset_dset_no_attrs_hint(file_id, FALSE);
+    CHECK(ret, FAIL, "H5Fset_dset_no_attrs_hint");
+
+    /* verify FALSE set on both opens
+     */
+    ret = H5Fget_dset_no_attrs_hint(file_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, FALSE, "minimize flag");
+
+    ret = H5Fget_dset_no_attrs_hint(file2_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, FALSE, "minimize flag");
+
+    /* re-set to TRUE on second open
+     */
+    ret = H5Fset_dset_no_attrs_hint(file2_id, TRUE);
+    CHECK(ret, FAIL, "H5Fset_dset_no_attrs_hint");
+
+    /* verify TRUE set on both opens
+     */
+    ret = H5Fget_dset_no_attrs_hint(file_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, TRUE, "minimize flag");
+
+    ret = H5Fget_dset_no_attrs_hint(file2_id, &minimize);
+    CHECK(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+    VERIFY(minimize, TRUE, "minimize flag");
+
+    /*----------------------------------------
+     * TEST error cases
+     */
+
+    /* trying to set with invalid file ID */
+    H5E_BEGIN_TRY {
+        ret = H5Fset_dset_no_attrs_hint(-1, TRUE);
+    } H5E_END_TRY;
+    VERIFY(ret, FAIL, "H5Fset_dset_no_attrs_hint");
+
+    /* trying to get with invalid file ID */
+    H5E_BEGIN_TRY {
+        ret = H5Fget_dset_no_attrs_hint(-1, &minimize);
+    } H5E_END_TRY;
+    VERIFY(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+
+    /* trying to get with invalid pointer */
+    H5E_BEGIN_TRY {
+        ret = H5Fget_dset_no_attrs_hint(file_id, NULL);
+    } H5E_END_TRY;
+    VERIFY(ret, FAIL, "H5Fget_dset_no_attrs_hint");
+
+    /************/
+    /* TEARDOWN */
+    /************/
+
+    ret = H5Fclose(file_id);
+    CHECK(ret, FAIL, "H5Fclose");
+    ret = H5Fclose(file2_id);
+    CHECK(ret, FAIL, "H5Fclose");
+} /* end test_min_dset_ohdr() */
 
 /****************************************************************
 **
@@ -7337,7 +7461,8 @@ test_file(void)
     test_libver_bounds_low_high();
     test_libver_macros();                       /* Test the macros for library version comparison */
     test_libver_macros2();                      /* Test the macros for library version comparison */
-    test_incr_filesize(env_h5_drvr);            /* Test H5Fincrement_filesize() and H5Fget_eoa() */
+    test_incr_filesize();                       /* Test H5Fincrement_filesize() and H5Fget_eoa() */
+    test_min_dset_ohdr();                       /* Test datset object header minimization */
 #ifndef H5_NO_DEPRECATED_SYMBOLS
     test_deprec();                              /* Test deprecated routines */
 #endif /* H5_NO_DEPRECATED_SYMBOLS */

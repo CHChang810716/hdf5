@@ -9,7 +9,7 @@
  * If you do not have access to either file, you may request a copy from     *
  * help@hdfgroup.org.                                                        *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-+
+
 #if defined(__has_attribute)
 #if __has_attribute(no_sanitize)
 #define HDF_NO_UBSAN __attribute__((no_sanitize("undefined")))
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int main(void) HDF_NO_UBSAN
+int HDF_NO_UBSAN main(void)
 {
     long double         ld = 20041683600089727.779961L;
     long                ll;
@@ -86,7 +86,7 @@ done:
 #include <string.h>
 #include <stdlib.h>
 
-int main(void) HDF_NO_UBSAN
+int HDF_NO_UBSAN main(void)
 {
     long double         ld;
     long                ll;
@@ -149,7 +149,7 @@ done:
 #include <string.h>
 #include <stdlib.h>
 
-int main(void) HDF_NO_UBSAN
+int HDF_NO_UBSAN main(void)
 {
     long double         ld = 20041683600089727.779961L;
     long long           ll;
@@ -192,7 +192,7 @@ done:
 #include <string.h>
 #include <stdlib.h>
 
-int main(void) HDF_NO_UBSAN
+int HDF_NO_UBSAN main(void)
 {
     long double         ld;
     long long           ll;
@@ -253,8 +253,8 @@ int FC_DUMMY_MAIN()
 { return 1;}
 #endif
 #endif
-int
-main () HDF_NO_UBSAN
+int HDF_NO_UBSAN
+main ()
 {
 
     char *chp = "beefs";
@@ -287,3 +287,27 @@ main () HDF_NO_UBSAN
 
 #endif
 
+#ifdef H5_DISABLE_SOME_LDOUBLE_CONV_TEST
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int HDF_NO_UBSAN main(void)
+{
+    FILE *fp;
+    char cpu[64];
+
+    fp = popen("uname -m", "r");
+
+    fgets(cpu, sizeof(cpu)-1, fp);
+
+    pclose(fp);
+
+    if(strncmp(cpu, "ppc64le", 7) == 0)
+        return 0;
+
+    return 1;
+}
+
+#endif
